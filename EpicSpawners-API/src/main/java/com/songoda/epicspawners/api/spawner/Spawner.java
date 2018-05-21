@@ -1,16 +1,21 @@
 package com.songoda.epicspawners.api.spawner;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Set;
+
 import com.songoda.epicspawners.api.CostType;
+import com.songoda.epicspawners.api.boost.BoostType;
+import com.songoda.epicspawners.api.boost.SpawnerBoost;
+
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
-import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.Collection;
 
 /**
  * Represents a spawner stack container in the game world.
@@ -62,7 +67,6 @@ public interface Spawner {
      */
     Collection<SpawnerStack> getSpawnerStacks();
 
-
     /**
      * Add a SpawnerStack to this spawner.
      *
@@ -75,7 +79,6 @@ public interface Spawner {
      * this spawner.
      */
     void clearSpawnerStacks();
-
 
     /**
      * This will return the {@link SpawnerStack} located at the
@@ -133,7 +136,6 @@ public interface Spawner {
      */
     boolean preStack(Player player, ItemStack item);
 
-
     /**
      * Converts the provided ItemStack to a Spawner stack and
      * adds it to this Spawner.
@@ -167,6 +169,122 @@ public interface Spawner {
      */
     boolean unstack(Player player);
 
+    /**
+     * Add a {@link SpawnerBoost} to this {@link Spawner} instance.
+     * If the provided boost is temporary and has expired, (i.e.
+     * {@link SpawnerBoost#getEndTime()} > {@link System#currentTimeMillis()}),
+     * this method will take no effect and false will be returned.
+     * 
+     * @param boost the boost to add
+     * 
+     * @return true if successfully added, false if already added
+     * or boost is expired
+     */
+    boolean addBoost(SpawnerBoost boost);
+
+    /**
+     * Create a new {@link SpawnerBoost} and add it to this spawner.
+     * The created boost will be permanent on this spawner until it
+     * has been manually removed using the {@link #removeBoost(SpawnerBoost)}
+     * method.
+     * <p>
+     * Each boost type requires different types of data. Due to external
+     * dependencies, a specific type is impossible to declare explicitly.
+     * For information on what type of object should be passed as data for
+     * each type of boost, see the {@link BoostType} documentation. If an
+     * incorrect data type is passed, an exception will be thrown
+     * 
+     * @param type the type of boost to create
+     * @param amount the boost amount. Must be positive and non-zero
+     * @param data the data for the boost type. This varies depending on
+     * the type of boost. See {@link BoostType} for more information
+     * 
+     * @return the created SpawnerBoost instance. null if unsuccessful
+     */
+    SpawnerBoost addBoost(BoostType type, int amount, Object data);
+
+    /**
+     * Create a new {@link SpawnerBoost} and add it to this spawner.
+     * The created boost will be temporary according to the specified
+     * {@code duration} parameter. The boost will be in effect until
+     * the duration of time has surpassed, after which it will be removed
+     * from this spawner and will no longer be in effect. The returned
+     * SpawnerBoost instance will then be invalidated and no longer usable
+     * by the {@link #addBoost(SpawnerBoost)} method.
+     * <p>
+     * Each boost type requires different types of data. Due to external
+     * dependencies, a specific type is impossible to declare explicitly.
+     * For information on what type of object should be passed as data for
+     * each type of boost, see the {@link BoostType} documentation. If an
+     * incorrect data type is passed, an exception will be thrown
+     * 
+     * @param type the type of boost to create
+     * @param amount the boost amount. Must be positive and non-zero
+     * @param data the data for the boost type. This varies depending on
+     * the type of boost. See {@link BoostType} for more information
+     * @param duration the duration for which this boost will last
+     * 
+     * @return the created SpawnerBoost instance. null if unsuccessful
+     */
+    SpawnerBoost addBoost(BoostType type, int amount, Object data, Duration duration);
+
+    /**
+     * Remove a specific {@link SpawnerBoost} from this spawner.
+     * If this spawner does not have an active boost matching the
+     * criteria of that passed (i.e. {@link #equals(Object)} returns
+     * false), this method will fail silently and false will be
+     * returned
+     * 
+     * @param boost the boost to remove
+     * 
+     * @return true if successful, false otherwise
+     */
+    boolean removeBoost(SpawnerBoost boost);
+
+    /**
+     * Remove all boosts of the specified type from this spawner
+     * 
+     * @param type the type of boost to remove
+     * 
+     * @return an array of all removed boosts
+     */
+    SpawnerBoost[] removeBoost(BoostType type);
+
+    /**
+     * Check whether this spawner has any active boosts or not
+     * 
+     * @return true if boosts are present, false otherwise
+     */
+    boolean hasBoost();
+
+    /**
+     * Check whether the provided boost is active on this spawner
+     * or not
+     * 
+     * @param boost the boost to check
+     * 
+     * @return true if present, false otherwise
+     */
+    boolean hasBoost(SpawnerBoost boost);
+
+    /**
+     * Check whether this spawner has any active boosts of the
+     * specified type or not
+     * 
+     * @param type the boost type to check
+     * 
+     * @return true if boost of specified type is present, false
+     * otherwise
+     */
+    boolean hasBoost(BoostType type);
+
+    /**
+     * Get an immutable Set of all {@link SpawnerBoost}s active
+     * on this spawner
+     * 
+     * @return all active boosts
+     */
+    Set<SpawnerBoost> getBoosts();
 
     /**
      * Get the total boosted amount from the spawner.
@@ -176,13 +294,18 @@ public interface Spawner {
     int getBoost();
 
     /**
-     * Get the end of life for the current closest to
-     * end boost.
+     * Get the end of life for the current closest to end boost.
      *
-     * @return time that the boost will end in
-     * miliseconds.
+     * @return the instant at which the boosts on this spawner
+     * will end. If no boosts are active, {@link Instant#now()}
+     * will be returned
      */
     Instant getBoostEnd();
+
+    /**
+     * Clear all boosts from this spawner
+     */
+    void clearBoosts();
 
     /**
      * Updates the delay of the spawner to use the equation
@@ -191,10 +314,11 @@ public interface Spawner {
      *
      * @return delay set
      */
-    int updateDelay(); // Updates delay of the spawner
+    int updateDelay();
 
     /**
      * You can use this method to force a spawn of this spawner.
      */
     void spawn();
+
 }

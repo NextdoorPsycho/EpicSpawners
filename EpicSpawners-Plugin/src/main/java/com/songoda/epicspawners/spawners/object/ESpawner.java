@@ -1,38 +1,30 @@
 package com.songoda.epicspawners.spawners.object;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import com.google.common.base.Preconditions;
 import com.songoda.arconix.api.methods.formatting.TextComponent;
 import com.songoda.arconix.api.methods.formatting.TimeComponent;
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicspawners.EpicSpawnersPlugin;
 import com.songoda.epicspawners.api.CostType;
 import com.songoda.epicspawners.api.EpicSpawnersAPI;
+import com.songoda.epicspawners.api.boost.BoostType;
+import com.songoda.epicspawners.api.boost.SpawnerBoost;
 import com.songoda.epicspawners.api.events.SpawnerChangeEvent;
 import com.songoda.epicspawners.api.spawner.Spawner;
 import com.songoda.epicspawners.api.spawner.SpawnerData;
 import com.songoda.epicspawners.api.spawner.SpawnerStack;
-import com.songoda.epicspawners.boost.BoostData;
-import com.songoda.epicspawners.boost.BoostType;
+import com.songoda.epicspawners.boost.ESpawnerBoost;
 import com.songoda.epicspawners.player.MenuType;
 import com.songoda.epicspawners.utils.Debugger;
 import com.songoda.epicspawners.utils.Methods;
@@ -58,20 +50,16 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 
 public class ESpawner implements Spawner {
 
-    private Location location;
-
     private int spawnCount;
-
     private String omniState = null;
-
     private UUID placedBy = null;
 
-    private CreatureSpawner creatureSpawner;
-
-    //Holds the different types of spawners contained by this creatureSpawner.
     private final Deque<SpawnerStack> spawnerStacks = new ArrayDeque<>();
-
+    private final Set<SpawnerBoost> boosts = new HashSet<>();
     private final ScriptEngine engine;
+
+    private final Location location;
+    private final CreatureSpawner creatureSpawner;
 
     public ESpawner(Location location) {
         this.location = location;
@@ -513,14 +501,8 @@ public class ESpawner implements Spawner {
                 }
             }
             if (yes) {
-                Calendar c = Calendar.getInstance();
-                Date currentDate = new Date();
-                c.setTime(currentDate);
-                c.add(Calendar.MINUTE, time);
-
-
-                BoostData boostData = new BoostData(BoostType.LOCATION, amt, c.getTime().getTime(), location);
-                instance.getBoostManager().addBoostToSpawner(boostData);
+                ESpawnerBoost eSpawnerBoost = new ESpawnerBoost(BoostType.LOCATION, amt, Instant.now().plus(time, ChronoUnit.MINUTES), location);
+                instance.getBoostManager().addBoostToSpawner(eSpawnerBoost);
                 p.sendMessage(EpicSpawnersPlugin.getInstance().getLocale().getMessage("event.boost.applied"));
             }
             p.closeInventory();
@@ -1078,79 +1060,120 @@ public class ESpawner implements Spawner {
     }
 
     @Override
-    public int getBoost() {
-        EpicSpawnersPlugin instance = EpicSpawnersPlugin.getInstance();
-        if (placedBy == null) return 0;
-
-        Set<BoostData> boosts = instance.getBoostManager().getBoosts();
-
-        if (boosts.size() == 0) return 0;
-
-        int amountToBoost = 0;
-
-        for (BoostData boostData : boosts) {
-            if (System.currentTimeMillis() >= boostData.getEndTime()) {
-                Bukkit.getScheduler().scheduleSyncDelayedTask(instance, () -> instance.getBoostManager().removeBoostFromSpawner(boostData), 1);
-                continue;
-            }
-
-            switch (boostData.getBoostType()) {
-                case LOCATION:
-                    if (!location.equals(boostData.getData())) continue;
-                    break;
-                case PLAYER:
-                    if (!placedBy.toString().equals(boostData.getData())) continue;
-                    break;
-                case FACTION:
-                    if (!instance.isInFaction((String) boostData.getData(), location)) continue;
-                    break;
-                case ISLAND:
-                    if (!instance.isInIsland((String) boostData.getData(), location)) continue;
-                    break;
-                case TOWN:
-                    if (!instance.isInTown((String) boostData.getData(), location)) continue;
-                    break;
-            }
-            amountToBoost += boostData.getAmtBoosted();
-        }
-        return amountToBoost;
+    public boolean addBoost(SpawnerBoost boost) {
+        Preconditions.checkNotNull(boost, "Cannot add a null spawner boost");
+        return !boost.isExpired() && boosts.add(boost);
     }
 
     @Override
-    public Instant getBoostEnd() { //ToDo: Wrong.
-        EpicSpawnersPlugin instance = EpicSpawnersPlugin.getInstance();
+    public SpawnerBoost addBoost(BoostType type, int amount, Object data) {
+        SpawnerBoost boost = EpicSpawnersAPI.createSpawnerBoost(type, amount, data);
+        this.addBoost(boost);
 
-        Set<BoostData> boosts = instance.getBoostManager().getBoosts();
+        return boost;
+    }
 
-        if (boosts.size() == 0) return null;
+    @Override
+    public SpawnerBoost addBoost(BoostType type, int amount, Object data, Duration duration) {
+        SpawnerBoost boost = EpicSpawnersAPI.createSpawnerBoost(type, amount, data, duration);
+        this.addBoost(boost);
 
-        for (BoostData boostData : boosts) {
-            if (System.currentTimeMillis() >= boostData.getEndTime()) {
-                Bukkit.getScheduler().scheduleSyncDelayedTask(instance, () -> instance.getBoostManager().removeBoostFromSpawner(boostData), 1);
+        return boost;
+    }
+
+    @Override
+    public boolean removeBoost(SpawnerBoost boost) {
+        return boosts.remove(boost);
+    }
+
+    @Override
+    public SpawnerBoost[] removeBoost(BoostType type) {
+        List<SpawnerBoost> removed = new ArrayList<>();
+        Iterator<SpawnerBoost> boostIterator = boosts.iterator();
+
+        while (boostIterator.hasNext()) {
+            SpawnerBoost boost = boostIterator.next();
+
+            if (boost.getType() == type) {
+                boostIterator.remove();
+                removed.add(boost);
+            }
+        }
+
+        return removed.toArray(new SpawnerBoost[removed.size()]);
+    }
+
+    @Override
+    public boolean hasBoost() {
+        this.filterBoosts();
+        return boosts.size() >= 1;
+    }
+
+    @Override
+    public boolean hasBoost(SpawnerBoost boost) {
+        this.filterBoosts();
+        return boosts.contains(boost);
+    }
+
+    @Override
+    public boolean hasBoost(BoostType type) {
+        this.filterBoosts();
+        return boosts.stream().anyMatch(s -> s.getType() == type);
+    }
+
+    @Override
+    public Set<SpawnerBoost> getBoosts() {
+        this.filterBoosts();
+        return Collections.unmodifiableSet(boosts);
+    }
+
+    @Override
+    public int getBoost() {
+        this.filterBoosts();
+        if (boosts.size() == 0) return 0;
+
+        int amount = 0;
+        for (SpawnerBoost boost : boosts) {
+            amount += boost.getAmount();
+        }
+
+        return amount;
+    }
+
+    @Override
+    public Instant getBoostEnd() {
+        this.filterBoosts();
+
+        Instant end = Instant.now();
+        if (boosts.size() == 0) return end;
+
+        for (SpawnerBoost boost : boosts) {
+            Instant endCurrent = boost.getEndTime();
+            if (endCurrent.isAfter(end)) {
+                end = endCurrent;
+            }
+
+            if (end.equals(Instant.MAX)) return end;
+        }
+
+        return end;
+    }
+
+    private void filterBoosts() {
+        Iterator<SpawnerBoost> boostIterator = boosts.iterator();
+
+        while (boostIterator.hasNext()) {
+            SpawnerBoost boost = boostIterator.next();
+            if (boost.isExpired()) {
+                boostIterator.remove();
                 continue;
             }
-
-            switch (boostData.getBoostType()) {
-                case LOCATION:
-                    if (!location.equals(boostData.getData())) continue;
-                    break;
-                case PLAYER:
-                    if (!placedBy.toString().equals(boostData.getData())) continue;
-                    break;
-                case FACTION:
-                    if (!instance.isInFaction((String) boostData.getData(), location)) continue;
-                    break;
-                case ISLAND:
-                    if (!instance.isInIsland((String) boostData.getData(), location)) continue;
-                    break;
-                case TOWN:
-                    if (!instance.isInTown((String) boostData.getData(), location)) continue;
-                    break;
-            }
-
-            return Instant.ofEpochMilli(boostData.getEndTime());
         }
-        return null;
+    }
+
+    @Override
+    public void clearBoosts() {
+        this.boosts.clear();
     }
 
     private int lastDelay = 0;

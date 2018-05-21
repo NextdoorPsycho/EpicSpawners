@@ -6,11 +6,11 @@ import com.songoda.arconix.api.methods.math.AMath;
 import com.songoda.arconix.api.methods.serialize.Serialize;
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicspawners.EpicSpawnersPlugin;
+import com.songoda.epicspawners.api.boost.BoostType;
 import com.songoda.epicspawners.api.spawner.Spawner;
 import com.songoda.epicspawners.api.spawner.SpawnerData;
 import com.songoda.epicspawners.api.spawner.SpawnerStack;
-import com.songoda.epicspawners.boost.BoostData;
-import com.songoda.epicspawners.boost.BoostType;
+import com.songoda.epicspawners.boost.ESpawnerBoost;
 import com.songoda.epicspawners.spawners.object.ESpawnerStack;
 import com.songoda.epicspawners.utils.Debugger;
 import com.songoda.epicspawners.utils.Methods;
@@ -29,6 +29,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 /**
@@ -143,35 +145,32 @@ public class CommandHandler implements CommandExecutor {
                                     sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&6" + args[2] + " &7is not a number..."));
                                 } else {
 
-                                    Calendar c = Calendar.getInstance();
-                                    Date currentDate = new Date();
-                                    c.setTime(currentDate);
-
+                                    Instant endInstant = Instant.now();
                                     String response = " &6" + arr[1] + "&7 has been given a spawner boost of &6" + args[2];
 
                                     if (args.length > 3) {
                                         if (args[3].contains("m:")) {
                                             String[] arr2 = (args[3]).split(":");
-                                            c.add(Calendar.MINUTE, Integer.parseInt(arr2[1]));
+                                            endInstant.plus(Long.parseLong(arr2[1]), ChronoUnit.MINUTES);
                                             response += " &7for &6" + arr2[1] + " minutes&7.";
                                         } else if (args[3].contains("h:")) {
                                             String[] arr2 = (args[3]).split(":");
-                                            c.add(Calendar.HOUR, Integer.parseInt(arr2[1]));
+                                            endInstant.plus(Long.parseLong(arr2[1]), ChronoUnit.HOURS);
                                             response += " &7for &6" + arr2[1] + " hours&7.";
                                         } else if (args[3].contains("d:")) {
                                             String[] arr2 = (args[3]).split(":");
-                                            c.add(Calendar.HOUR, Integer.parseInt(arr2[1]) * 24);
+                                            endInstant.plus(Long.parseLong(arr2[1]), ChronoUnit.DAYS);
                                             response += " &7for &6" + arr2[1] + " days&7.";
                                         } else if (args[3].contains("y:")) {
                                             String[] arr2 = (args[3]).split(":");
-                                            c.add(Calendar.YEAR, Integer.parseInt(arr2[1]));
+                                            endInstant.plus(Long.parseLong(arr2[1]), ChronoUnit.YEARS);
                                             response += " &7for &6" + arr2[1] + " years&7.";
                                         } else {
                                             sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&7" + args[3] + " &7is invalid."));
                                             return true;
                                         }
                                     } else {
-                                        c.add(Calendar.YEAR, 10);
+                                        endInstant = Instant.MAX;
                                         response += "&6.";
                                     }
 
@@ -223,8 +222,8 @@ public class CommandHandler implements CommandExecutor {
                                         return true;
                                     }
 
-                                    BoostData boostData = new BoostData(boostType, Integer.parseInt(args[2]), c.getTime().getTime(), boostObject);
-                                    instance.getBoostManager().addBoostToSpawner(boostData);
+                                    ESpawnerBoost eSpawnerBoost = new ESpawnerBoost(boostType, Integer.parseInt(args[2]), endInstant, boostObject);
+                                    instance.getBoostManager().addBoostToSpawner(eSpawnerBoost);
                                     sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + start + response));
                                 }
                             } else {

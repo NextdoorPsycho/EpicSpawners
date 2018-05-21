@@ -5,17 +5,17 @@ import java.util.Set;
 
 public class BoostManager {
 
-    private final Set<BoostData> boostedSpawners = new HashSet<>();
+    private final Set<ESpawnerBoost> boostedSpawners = new HashSet<>();
 
-    public void addBoostToSpawner(BoostData data) {
+    public void addBoostToSpawner(ESpawnerBoost data) {
         this.boostedSpawners.add(data);
     }
 
-    public void removeBoostFromSpawner(BoostData data) {
+    public void removeBoostFromSpawner(ESpawnerBoost data) {
         this.boostedSpawners.remove(data);
     }
 
-    public Set<BoostData> getBoosts() {
+    public Set<ESpawnerBoost> getBoosts() {
         return boostedSpawners;
     }
 }

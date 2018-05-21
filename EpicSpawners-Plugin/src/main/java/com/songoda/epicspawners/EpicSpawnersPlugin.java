@@ -1,5 +1,7 @@
 package com.songoda.epicspawners;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +17,8 @@ import com.songoda.arconix.api.utils.ConfigWrapper;
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicspawners.api.EpicSpawners;
 import com.songoda.epicspawners.api.EpicSpawnersAPI;
+import com.songoda.epicspawners.api.boost.BoostType;
+import com.songoda.epicspawners.api.boost.SpawnerBoost;
 import com.songoda.epicspawners.api.particles.ParticleDensity;
 import com.songoda.epicspawners.api.particles.ParticleEffect;
 import com.songoda.epicspawners.api.particles.ParticleType;
@@ -25,9 +29,8 @@ import com.songoda.epicspawners.api.spawner.SpawnerStack;
 import com.songoda.epicspawners.api.utils.ClaimableProtectionPluginHook;
 import com.songoda.epicspawners.api.utils.ProtectionPluginHook;
 import com.songoda.epicspawners.api.utils.SpawnerDataBuilder;
-import com.songoda.epicspawners.boost.BoostData;
+import com.songoda.epicspawners.boost.ESpawnerBoost;
 import com.songoda.epicspawners.boost.BoostManager;
-import com.songoda.epicspawners.boost.BoostType;
 import com.songoda.epicspawners.handlers.AppearanceHandler;
 import com.songoda.epicspawners.handlers.BlacklistHandler;
 import com.songoda.epicspawners.handlers.CommandHandler;
@@ -314,13 +317,13 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
             for (String key : dataConfig.getConfigurationSection("data.boosts").getKeys(false)) {
                 if (!dataConfig.contains("data.boosts." + key + ".BoostType")) continue;
 
-                BoostData boostData = new BoostData(
+                ESpawnerBoost eSpawnerBoost = new ESpawnerBoost(
                         BoostType.valueOf(dataConfig.getString("data.boosts." + key + ".BoostType")),
                         dataConfig.getInt("data.boosts." + key + ".Amount"),
-                        Long.parseLong(key),
+                        Instant.ofEpochMilli(Long.parseLong(key)),
                         dataConfig.get("data.boosts." + key + ".Data"));
 
-                this.boostManager.addBoostToSpawner(boostData);
+                this.boostManager.addBoostToSpawner(eSpawnerBoost);
             }
         }
 
@@ -456,11 +459,11 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
             }
         }
 
-        for (BoostData boostData : boostManager.getBoosts()) {
-            ConfigurationSection currentSection = dataSection.createSection("boosts." + String.valueOf(boostData.getEndTime()));
-            currentSection.set("BoostType", boostData.getBoostType().name());
-            currentSection.set("Data", boostData.getData());
-            currentSection.set("Amount", boostData.getAmtBoosted());
+        for (ESpawnerBoost eSpawnerBoost : boostManager.getBoosts()) {
+            ConfigurationSection currentSection = dataSection.createSection("boosts." + String.valueOf(eSpawnerBoost.getEndTime().toEpochMilli()));
+            currentSection.set("BoostType", eSpawnerBoost.getType().name());
+            currentSection.set("Data", eSpawnerBoost.getData());
+            currentSection.set("Amount", eSpawnerBoost.getAmount());
         }
 
         for (PlayerData playerData : playerActionManager.getRegisteredPlayers()) {
@@ -794,6 +797,26 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
 
         this.protectionHooks.add(hook);
         this.getLogger().info("Registered protection hook for plugin: " + hook.getPlugin().getName());
+    }
+
+    @Override
+    public SpawnerBoost createSpawnerBoost(BoostType type, int amount, Object data) {
+        return createSpawnerBoost(type, amount, Instant.MAX, data);
+    }
+
+    @Override
+    public SpawnerBoost createSpawnerBoost(BoostType type, int amount, Object data, Duration duration) {
+        Preconditions.checkArgument(duration != null && !duration.isNegative() && !duration.isZero(), "Invalid duration");
+        return createSpawnerBoost(type, amount, Instant.now().plus(duration), data);
+    }
+
+    private SpawnerBoost createSpawnerBoost(BoostType type, int amount, Instant endTime, Object data) {
+        Preconditions.checkNotNull(type, "Cannot create boost of type null");
+        Preconditions.checkArgument(amount >= 1, "Amount must be greater than or equal to 1");
+        Preconditions.checkNotNull(data, "Data must not be null");
+        Preconditions.checkArgument(type.isSupportedDataType(data), "Unsupported object data for provided type");
+
+        return new ESpawnerBoost(type, amount, endTime, data);
     }
 
 }
