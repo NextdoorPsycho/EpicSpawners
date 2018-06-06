@@ -40,6 +40,8 @@ import com.songoda.epicspawners.spawners.object.ESpawnerStack;
 import com.songoda.epicspawners.tasks.SpawnerParticleTask;
 import com.songoda.epicspawners.tasks.SpawnerSpawnTask;
 import com.songoda.epicspawners.utils.*;
+import com.songoda.epicspawners.utils.gui.AbstractGUI;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.bukkit.Bukkit;
@@ -131,6 +133,7 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
     public void onEnable() {
         INSTANCE = this;
         EpicSpawnersAPI.setImplementation(this);
+        AbstractGUI.initializeListeners(this);
 
         Arconix.pl().hook(this);
 
