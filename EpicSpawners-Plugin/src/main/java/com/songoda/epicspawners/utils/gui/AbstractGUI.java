@@ -1,8 +1,16 @@
 package com.songoda.epicspawners.utils.gui;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import com.google.common.base.Preconditions;
+import com.songoda.epicspawners.utils.Range;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -22,6 +30,7 @@ public abstract class AbstractGUI implements GUI {
 
     private final Inventory inventory;
     private final Clickable[] clickActions;
+    private final Map<Range, Clickable> rangedClickActions = new HashMap<>();
 
     /**
      * Construct a new GUI based on an {@link InventoryType}'s default size, as well
@@ -87,6 +96,13 @@ public abstract class AbstractGUI implements GUI {
         return slot >= 0 && slot < inventory.getSize() && clickActions[slot] != null;
     }
 
+    @Override
+    public void dispose() {
+        Arrays.setAll(clickActions, null);
+        this.rangedClickActions.clear();
+        this.inventory.getViewers().forEach(HumanEntity::closeInventory);
+    }
+
     /**
      * Register a new {@link Clickable} action for the provided slot
      *
@@ -101,13 +117,64 @@ public abstract class AbstractGUI implements GUI {
     }
 
     /**
-     * Remove an action from the specified slot
+     * Register a new {@link Clickable} action for the provided range. If the
+     * range overlaps that of an existing range or either bounds of the range exceed
+     * the size of the inventory, an exception will be thrown. Additionally, for any
+     * actions registered for an individual slot within the registered range, they
+     * will be removed and replaced with the action registered in this range.
+     *
+     * @param from the beginning of the range (inclusive). Must be less than "to"
+     * @param to the end of the range (inclusive). Must be greater than "from"
+     * @param action the action to register
+     */
+    protected final void registerClickableRange(int from, int to, Clickable action) {
+        Preconditions.checkArgument(from >= 0 && from < inventory.getSize(), "Action slots must be between 0 and %s", inventory.getSize());
+        Preconditions.checkArgument(to >= 0 && to < inventory.getSize(), "Action slots must be between 0 and %s", inventory.getSize());
+        Preconditions.checkArgument(from < to, "From must be less than to");
+        Preconditions.checkNotNull(action, "Cannot register a null action");
+
+        for (Range range : rangedClickActions.keySet()) {
+            if (range.isWithin(from) || range.isWithin(to)) {
+                throw new IllegalStateException("Range overlaps that of another range (Existing range: " + range.getLow() + " - " + range.getHigh() + ")");
+            }
+        }
+
+        for (int i = from; i < to; i++) {
+            this.clickActions[i] = null;
+        }
+
+        this.rangedClickActions.put(Range.from(from, to), action);
+    }
+
+    /**
+     * Remove an action from the specified slot. This does not affect ranged actions
      *
      * @param slot the slot to remove the action from
      */
     protected final void removeActionFrom(int slot) {
         Preconditions.checkArgument(slot >= 0 || slot < inventory.getSize(), "Cannot remove action from invalid slot. Must be between 0 and %s", inventory.getSize());
         this.clickActions[slot] = null;
+    }
+
+    /**
+     * Remove a ranged action such that it includes the specified slot
+     *
+     * @param slot the slot within the range for which to remove the action from
+     * @return true if successful, false if no changes were made
+     */
+    protected final boolean removeRangedActionForSlot(int slot) {
+        Preconditions.checkArgument(slot >= 0 || slot < inventory.getSize(), "Cannot remove action from invalid slot. Must be between 0 and %s", inventory.getSize());
+
+        Iterator<Range> ranges = rangedClickActions.keySet().iterator();
+        while (ranges.hasNext()) {
+            Range range = ranges.next();
+            if (range.isWithin(slot)) {
+                ranges.remove();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -151,7 +218,14 @@ public abstract class AbstractGUI implements GUI {
         Preconditions.checkNotNull(type, "A null click type cannot be performed");
 
         Clickable action = clickActions[slot];
-        if (action == null) return false;
+        if (action == null) {
+            for (Entry<Range, Clickable> rangedAction : rangedClickActions.entrySet()) {
+                if (!rangedAction.getKey().isWithin(slot)) continue;
+                action = rangedAction.getValue();
+            }
+        }
+
+        if (action == null) return false; // If still no action, just give up
 
         action.click(player, inventory, cursor, slot, type);
         return true;

@@ -27,4 +27,10 @@ public interface GUI {
      */
     public boolean hasClickAction(int slot);
 
+    /**
+     * Dispose of this GUI. Click actions will no longer be recognized and
+     * any players viewing the GUI will be booted from viewing.
+     */
+    public void dispose();
+
 }
