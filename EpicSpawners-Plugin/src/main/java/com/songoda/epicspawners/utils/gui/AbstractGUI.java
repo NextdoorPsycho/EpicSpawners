@@ -26,7 +26,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public abstract class AbstractGUI implements GUI {
 
-    private static boolean initialized = false;
+    private static boolean listenersInitialized = false;
+
+    private boolean initialized = false;
 
     private final Inventory inventory;
     private final Clickable[] clickActions;
@@ -42,7 +44,6 @@ public abstract class AbstractGUI implements GUI {
     protected AbstractGUI(InventoryType type, String inventoryName) {
         this.inventory = Bukkit.createInventory(new GUIHolder(), type, inventoryName);
         this.clickActions = new Clickable[inventory.getSize()];
-        this.init();
     }
 
     /**
@@ -54,7 +55,6 @@ public abstract class AbstractGUI implements GUI {
     protected AbstractGUI(int size, String inventoryName) {
         this.inventory = Bukkit.createInventory(new GUIHolder(), size, inventoryName);
         this.clickActions = new Clickable[inventory.getSize()];
-        this.init();
     }
 
     /**
@@ -65,7 +65,6 @@ public abstract class AbstractGUI implements GUI {
     protected AbstractGUI(InventoryType type) {
         this.inventory = Bukkit.createInventory(new GUIHolder(), type);
         this.clickActions = new Clickable[inventory.getSize()];
-        this.init();
     }
 
     /**
@@ -76,11 +75,14 @@ public abstract class AbstractGUI implements GUI {
     protected AbstractGUI(int size) {
         this.inventory = Bukkit.createInventory(new GUIHolder(), size);
         this.clickActions = new Clickable[inventory.getSize()];
-        this.init();
     }
 
     @Override
     public final Inventory getInventory() {
+        if (!initialized) {
+            this.init();
+        }
+
         return inventory;
     }
 
@@ -88,11 +90,19 @@ public abstract class AbstractGUI implements GUI {
     public final void openFor(Player player) {
         Preconditions.checkNotNull(player, "Cannot open inventory for null player");
 
+        if (!initialized) {
+            this.init();
+        }
+
         player.openInventory(inventory);
     }
 
     @Override
     public final boolean hasClickAction(int slot) {
+        if (!initialized) {
+            this.init();
+        }
+
         return slot >= 0 && slot < inventory.getSize() && clickActions[slot] != null;
     }
 
@@ -205,10 +215,12 @@ public abstract class AbstractGUI implements GUI {
     protected void onGUIClose(Player player) { }
 
     private void init() {
-        Preconditions.checkArgument(initialized, "The GUI class has not yet been initialized. Invoke GUI#initializeListeners(JavaPlugin)");
+        Preconditions.checkArgument(listenersInitialized, "The GUI class has not yet been initialized. Invoke GUI#initializeListeners(JavaPlugin)");
+        Preconditions.checkArgument(!initialized, "This GUI has already been initialized");
 
         this.initInventoryItems(inventory);
         this.initClickableObjects();
+        this.initialized = true;
     }
 
     private boolean invokeClickAction(Player player, Inventory inventory, ItemStack cursor, int slot, ClickType type) {
@@ -239,7 +251,7 @@ public abstract class AbstractGUI implements GUI {
      * @param plugin the plugin initializing the GUI listeners
      */
     public static void initializeListeners(JavaPlugin plugin) {
-        if (initialized) return;
+        if (listenersInitialized) return;
 
         Bukkit.getPluginManager().registerEvents(new Listener() {
             @EventHandler
@@ -280,7 +292,7 @@ public abstract class AbstractGUI implements GUI {
             }
         }, plugin);
 
-        initialized = true;
+        listenersInitialized = true;
     }
 
 
