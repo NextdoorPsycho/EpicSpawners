@@ -1,14 +1,11 @@
 package com.songoda.epicspawners.api.events;
 
-import com.songoda.epicspawners.api.EpicSpawnersAPI;
-import com.songoda.epicspawners.api.spawner.Spawner;
-import com.songoda.epicspawners.api.spawner.SpawnerData;
-import com.songoda.epicspawners.api.spawner.SpawnerManager;
-
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+
+import com.songoda.epicspawners.api.spawner.Spawner;
+import com.songoda.epicspawners.api.spawner.SpawnerData;
 
 /**
  * Called when a spawner has been changed. This includes changes such as stack size as
@@ -42,27 +39,6 @@ public class SpawnerChangeEvent extends SpawnerEvent implements Cancellable {
 
         this.spawnerData = data;
         this.oldSpawnerData = oldSpawnerData;
-        this.stackSize = oldStackSize = spawner.getSpawnerDataCount();
-        this.type = ChangeType.SPAWNER_DATA;
-    }
-
-    @Deprecated
-    public SpawnerChangeEvent(Location location, Player player, int stackSize, int oldStackSize) {
-        this(player, EpicSpawnersAPI.getSpawnerManager().getSpawnerFromWorld(location), stackSize, oldStackSize);
-    }
-
-    @Deprecated
-    public SpawnerChangeEvent(Location location, Player player, SpawnerData data, SpawnerData oldSpawnerData) {
-        this(player, EpicSpawnersAPI.getSpawnerManager().getSpawnerFromWorld(location), data, oldSpawnerData);
-    }
-
-    @Deprecated
-    public SpawnerChangeEvent(Location location, Player player, String type, String oldType) {
-        super(player, EpicSpawnersAPI.getSpawnerManager().getSpawnerFromWorld(location));
-
-        SpawnerManager spawnerManager = EpicSpawnersAPI.getSpawnerManager();
-        this.spawnerData = spawnerManager.getSpawnerData(type);
-        this.oldSpawnerData = spawnerManager.getSpawnerData(oldType);
         this.stackSize = oldStackSize = spawner.getSpawnerDataCount();
         this.type = ChangeType.SPAWNER_DATA;
     }
@@ -135,54 +111,6 @@ public class SpawnerChangeEvent extends SpawnerEvent implements Cancellable {
     @Override
     public void setCancelled(boolean canceled) {
         this.canceled = canceled;
-    }
-
-    /**
-     * The spawner's multiplier (stack size)
-     * 
-     * @return the stack size
-     * 
-     * @deprecated see {@link #getStackSize()}
-     */
-    @Deprecated
-    public int getCurrentMulti() {
-        return stackSize;
-    }
-
-    /**
-     * Get the old stack size
-     * 
-     * @return the old stack size
-     * 
-     * @deprecated see {@link #getOldStackSize()}
-     */
-    @Deprecated
-    public int getOldMulti() {
-        return oldStackSize;
-    }
-
-    /**
-     * Get the new spawner data type
-     * 
-     * @return the spawner type
-     * 
-     * @deprecated see {@link #getSpawnerData()}
-     */
-    @Deprecated
-    public String getType() {
-        return spawnerData.getIdentifyingName();
-    }
-
-    /**
-     * Get the old spawner data type
-     * 
-     * @return the spawner type
-     * 
-     * @deprecated see {@link #getOldSpawnerData()}
-     */
-    @Deprecated
-    public String getOldType() {
-        return oldSpawnerData.getIdentifyingName();
     }
 
 }

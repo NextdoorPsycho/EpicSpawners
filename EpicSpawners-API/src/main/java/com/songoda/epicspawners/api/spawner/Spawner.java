@@ -169,20 +169,6 @@ public interface Spawner {
      */
     boolean preStack(Player player, ItemStack item);
 
-
-    /**
-     * Converts the provided ItemStack to a Spawner stack and
-     * adds it to this Spawner.
-     *
-     * @param player the player performing the stacking
-     * @param type   the type of spawner to stack
-     * @param amt    the amount of that spawner type to stack
-     * @return true if successful, false otherwise
-     * @deprecated see {@link #stack(Player, SpawnerData, int)}
-     */
-    @Deprecated
-    boolean stack(Player player, String type, int amt);
-
     /**
      * Converts the provided ItemStack to a Spawner stack and
      * adds it to this Spawner.

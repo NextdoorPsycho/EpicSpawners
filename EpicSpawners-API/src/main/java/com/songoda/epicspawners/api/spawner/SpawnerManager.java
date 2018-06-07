@@ -4,7 +4,6 @@ import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * A manager class to handle {@link Spawner} instances and registered {@link SpawnerData}.
@@ -59,16 +58,6 @@ public interface SpawnerManager {
     void removeSpawnerData(String name);
 
     /**
-     * Get a map of all SpawnerData registered to memory.
-     *
-     * @return map of SpawnerData
-     *
-     * @deprecated see {@link #getAllSpawnerData()}
-     */
-    @Deprecated
-    Map<String, SpawnerData> getRegisteredSpawnerData();
-
-    /**
      * Get an immutable collection of all SpawnerData
      * registered to memory
      *
@@ -120,18 +109,6 @@ public interface SpawnerManager {
      * @return the spawner that was removed
      */
     Spawner removeSpawnerFromWorld(Location location);
-
-    /**
-     * Get a Map of all the spawners currently registered into
-     * memory.
-     *
-     * @return all registered spawners.
-     *
-     * @deprecated see {@link #getSpawners()} for a more proper
-     * return value. This method will be removed in the near future
-     */
-    @Deprecated
-    Map<Location, Spawner> getSpawnersInWorld();
 
     /**
      * Get an immutable collection of all spawners currently

@@ -964,12 +964,6 @@ public class ESpawner implements Spawner {
     }
 
     @Override
-    @Deprecated
-    public boolean stack(Player player, String type, int amt) {
-        return stack(player, EpicSpawnersAPI.getSpawnerManager().getSpawnerData(type), amt);
-    }
-
-    @Override
     public boolean stack(Player player, SpawnerData data, int amount) {
         EpicSpawnersPlugin instance = EpicSpawnersPlugin.getInstance();
 

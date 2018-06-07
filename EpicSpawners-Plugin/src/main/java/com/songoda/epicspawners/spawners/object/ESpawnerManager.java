@@ -42,6 +42,7 @@ public class ESpawnerManager implements SpawnerManager {
         spawnerData.reloadSpawnMethods();
     }
 
+    @Override
     public void addSpawnerData(SpawnerData spawnerData) {
         spawners.put(spawnerData.getIdentifyingName().toLowerCase(), spawnerData);
     }
@@ -49,12 +50,6 @@ public class ESpawnerManager implements SpawnerManager {
     @Override
     public void removeSpawnerData(String name) {
         spawners.remove(name.toLowerCase());
-    }
-
-    @Override
-    @Deprecated
-    public Map<String, SpawnerData> getRegisteredSpawnerData() {
-        return Collections.unmodifiableMap(spawners);
     }
 
     @Override
@@ -85,12 +80,6 @@ public class ESpawnerManager implements SpawnerManager {
     @Override
     public Spawner removeSpawnerFromWorld(Location location) {
         return spawnersInWorld.remove(roundLocation(location));
-    }
-
-    @Override
-    @Deprecated
-    public Map<Location, Spawner> getSpawnersInWorld() {
-        return Collections.unmodifiableMap(spawnersInWorld);
     }
 
     @Override
