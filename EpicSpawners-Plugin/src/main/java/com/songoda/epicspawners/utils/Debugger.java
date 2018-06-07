@@ -7,20 +7,14 @@ import com.songoda.epicspawners.EpicSpawnersPlugin;
  */
 public class Debugger {
 
-
     public static void runReport(Exception e) {
-        if (isDebug()) {
-            System.out.println("==============================================================");
-            System.out.println("The following is an error encountered in EpicSpawners.");
-            System.out.println("--------------------------------------------------------------");
-            e.printStackTrace();
-            System.out.println("==============================================================");
-        }
-        sendReport(e);
-    }
+        if (!isDebug()) return;
 
-    public static void sendReport(Exception e) {
-
+        System.out.println("==============================================================");
+        System.out.println("The following is an error encountered in EpicSpawners.");
+        System.out.println("--------------------------------------------------------------");
+        e.printStackTrace();
+        System.out.println("==============================================================");
     }
 
     public static boolean isDebug() {

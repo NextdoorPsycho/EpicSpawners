@@ -11,15 +11,9 @@ import com.songoda.epicspawners.api.spawner.SpawnerStack;
  */
 public class ESpawnerStack implements SpawnerStack {
 
-    // This is the instance of SpawnerData that
-    // This SpawnerStack utilizes.
+    private int stackSize;
     private SpawnerData spawnerData;
 
-    // The Amount of the defined SpawnerData in
-    // this stack.
-    private int stackSize;
-
-    //Construct the class and define values.
     public ESpawnerStack(SpawnerData spawnerData) {
         this(spawnerData, 1);
     }

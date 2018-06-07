@@ -36,11 +36,19 @@ import com.songoda.epicspawners.boost.BoostData;
 import com.songoda.epicspawners.boost.BoostType;
 import com.songoda.epicspawners.player.MenuType;
 import com.songoda.epicspawners.utils.Debugger;
+import com.songoda.epicspawners.utils.HeadType;
 import com.songoda.epicspawners.utils.Methods;
 
 import net.milkbowl.vault.economy.Economy;
 
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
@@ -179,10 +187,10 @@ public class ESpawner implements Spawner {
 
             ItemStack item = new ItemStack(Material.PLAYER_HEAD, showAmt);
             if (spawnerStacks.size() != 1) {
-                item = EpicSpawnersPlugin.getInstance().getHeads().addTexture(item, instance.getSpawnerManager().getSpawnerData("omni"));
+                item = HeadType.addTexture(item, instance.getSpawnerManager().getSpawnerData("omni"));
             } else {
                 try {
-                    item = EpicSpawnersPlugin.getInstance().getHeads().addTexture(item, spawnerData);
+                    item = HeadType.addTexture(item, spawnerData);
                 } catch (Exception e) {
                     item = new ItemStack(Material.MOB_SPAWNER, showAmt);
                 }
@@ -444,13 +452,13 @@ public class ESpawner implements Spawner {
             i.setItem(26, Methods.getBackgroundGlass(true));
 
             ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-            head = Arconix.pl().getApi().getGUI().addTexture(head, "http://textures.minecraft.net/texture/1b6f1a25b6bc199946472aedb370522584ff6f4e83221e5946bd2e41b5ca13b");
+            head = HeadType.ARROW_RIGHT.addTexture(head);
             SkullMeta headMeta = (SkullMeta) head.getItemMeta();
             headMeta.setDisplayName(TextComponent.formatText("&6&l+1"));
             head.setItemMeta(headMeta);
 
             ItemStack head2 = new ItemStack(Material.PLAYER_HEAD);
-            head2 = Arconix.pl().getApi().getGUI().addTexture(head2, "http://textures.minecraft.net/texture/3ebf907494a935e955bfcadab81beafb90fb9be49c7026ba97d798d5f1a23");
+            head2 = HeadType.ARROW_LEFT.addTexture(head2);
             SkullMeta head2Meta = (SkullMeta) head2.getItemMeta();
             head2Meta.setDisplayName(TextComponent.formatText("&6&l-1"));
             head2.setItemMeta(head2Meta);
@@ -590,7 +598,7 @@ public class ESpawner implements Spawner {
                 if (place == (max22 - 18))
                     place++;
                 ItemStack it = new ItemStack(Material.PLAYER_HEAD);
-                it = EpicSpawnersPlugin.getInstance().getHeads().addTexture(it, spawnerData);
+                it = HeadType.addTexture(it, spawnerData);
 
                 if (spawnerData.getDisplayItem() != null) {
                     Material mat = spawnerData.getDisplayItem();
@@ -634,13 +642,13 @@ public class ESpawner implements Spawner {
             exit.setItemMeta(exitmeta);
 
             ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-            head = Arconix.pl().getApi().getGUI().addTexture(head, "http://textures.minecraft.net/texture/1b6f1a25b6bc199946472aedb370522584ff6f4e83221e5946bd2e41b5ca13b");
+            head = HeadType.ARROW_RIGHT.addTexture(head);
             SkullMeta headMeta = (SkullMeta) head.getItemMeta();
             headMeta.setDisplayName(EpicSpawnersPlugin.getInstance().getLocale().getMessage("general.nametag.next"));
             head.setItemMeta(headMeta);
 
             ItemStack head2 = new ItemStack(Material.PLAYER_HEAD);
-            head2 = Arconix.pl().getApi().getGUI().addTexture(head2, "http://textures.minecraft.net/texture/3ebf907494a935e955bfcadab81beafb90fb9be49c7026ba97d798d5f1a23");
+            head2 = HeadType.ARROW_LEFT.addTexture(head2);
             SkullMeta head2Meta = (SkullMeta) head2.getItemMeta();
             head2Meta.setDisplayName(EpicSpawnersPlugin.getInstance().getLocale().getMessage("general.nametag.back"));
             head2.setItemMeta(head2Meta);
@@ -698,7 +706,7 @@ public class ESpawner implements Spawner {
             double price = type.getConvertPrice() * getSpawnerDataCount();
 
             if (!(econ.has(p, price) || p.isOp())) {
-                p.sendMessage(EpicSpawnersPlugin.getInstance().references.getPrefix() + EpicSpawnersPlugin.getInstance().getLocale().getMessage("event.upgrade.cannotafford"));
+                p.sendMessage(EpicSpawnersPlugin.getInstance().getPrefix() + EpicSpawnersPlugin.getInstance().getLocale().getMessage("event.upgrade.cannotafford"));
                 return;
             }
             SpawnerChangeEvent event = new SpawnerChangeEvent(p, this, getFirstStack().getSpawnerData(), type);
@@ -715,7 +723,7 @@ public class ESpawner implements Spawner {
             }
             this.creatureSpawner.update();
 
-            p.sendMessage(EpicSpawnersPlugin.getInstance().references.getPrefix() + EpicSpawnersPlugin.getInstance().getLocale().getMessage("event.convert.success"));
+            p.sendMessage(EpicSpawnersPlugin.getInstance().getPrefix() + EpicSpawnersPlugin.getInstance().getLocale().getMessage("event.convert.success"));
 
             instance.getHologramHandler().updateHologram(this);
             p.closeInventory();

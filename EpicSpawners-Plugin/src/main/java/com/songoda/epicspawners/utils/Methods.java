@@ -1,7 +1,6 @@
 package com.songoda.epicspawners.utils;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -11,6 +10,7 @@ import com.songoda.epicspawners.EpicSpawnersPlugin;
 
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -18,11 +18,9 @@ import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -152,29 +150,25 @@ public class Methods {
     }
 
     public static int countEntitiesAroundLocation(Location location) {
-        try {
-            int amt = 0;
+        int amount = 0;
 
-            String[] arr = EpicSpawnersPlugin.getInstance().getConfig().getString("Main.Radius To Search Around Spawners").split("x");
-            Collection<Entity> nearbyEntite = location.getWorld().getNearbyEntities(location.clone().add(0.5, 0.5, 0.5), Integer.parseInt(arr[0]), Integer.parseInt(arr[1]), Integer.parseInt(arr[2]));
-            if (nearbyEntite.size() < 1) return amt;
+        String[] arr = EpicSpawnersPlugin.getInstance().getConfig().getString("Main.Radius To Search Around Spawners").split("x");
+        Collection<Entity> nearbyEntities = location.getWorld().getNearbyEntities(location.clone().add(0.5, 0.5, 0.5), NumberUtils.toInt(arr[0], 1), NumberUtils.toInt(arr[1], 1), NumberUtils.toInt(arr[2], 1));
+        if (nearbyEntities.size() == 0) return amount;
 
-            for (Entity ee : nearbyEntite) {
-                if (!(ee instanceof LivingEntity) || ee instanceof Player || ee.getType().name().toLowerCase().contains("armor")) {
-                    continue;
-                }
-                if (EpicSpawnersPlugin.getInstance().getServer().getPluginManager().getPlugin("StackMob") != null
-                        && ee.getMetadata(uk.antiperson.stackmob.tools.extras.GlobalValues.METATAG).size() != 0) {
-                    amt = amt + ee.getMetadata(uk.antiperson.stackmob.tools.extras.GlobalValues.METATAG).get(0).asInt();
-                } else {
-                    amt++;
-                }
+        for (Entity entity : nearbyEntities) {
+            EntityType type = entity.getType();
+            if (type == EntityType.PLAYER || type == EntityType.ARMOR_STAND || !(entity instanceof LivingEntity)) continue;
+
+            if (Bukkit.getPluginManager().isPluginEnabled("StackMob")
+                    && entity.getMetadata(uk.antiperson.stackmob.tools.extras.GlobalValues.METATAG).size() != 0) {
+                amount += entity.getMetadata(uk.antiperson.stackmob.tools.extras.GlobalValues.METATAG).get(0).asInt();
+            } else {
+                amount++;
             }
-            return amt;
-        } catch (Exception e) {
-            Debugger.runReport(e);
         }
-        return 0;
+
+        return amount;
     }
 
 }

@@ -9,7 +9,6 @@ import com.songoda.epicspawners.api.spawner.Spawner;
 import com.songoda.epicspawners.api.spawner.SpawnerData;
 import com.songoda.epicspawners.api.spawner.SpawnerStack;
 import com.songoda.epicspawners.spawners.object.SpawnOptionType;
-import com.songoda.epicspawners.utils.ServerVersion;
 
 import org.apache.commons.lang.math.NumberUtils;
 import org.bukkit.Bukkit;

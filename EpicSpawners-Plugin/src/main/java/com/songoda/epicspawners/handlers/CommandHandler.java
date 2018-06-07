@@ -1,10 +1,15 @@
 package com.songoda.epicspawners.handlers;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Map;
+import java.util.Random;
+
 import com.google.common.collect.Iterables;
 import com.songoda.arconix.api.methods.formatting.TextComponent;
 import com.songoda.arconix.api.methods.math.AMath;
-import com.songoda.arconix.api.methods.serialize.Serialize;
-import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicspawners.EpicSpawnersPlugin;
 import com.songoda.epicspawners.api.spawner.Spawner;
 import com.songoda.epicspawners.api.spawner.SpawnerData;
@@ -13,23 +18,20 @@ import com.songoda.epicspawners.boost.BoostData;
 import com.songoda.epicspawners.boost.BoostType;
 import com.songoda.epicspawners.spawners.object.ESpawnerStack;
 import com.songoda.epicspawners.utils.Debugger;
+import com.songoda.epicspawners.utils.HeadType;
 import com.songoda.epicspawners.utils.Methods;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-
-import java.util.*;
 
 /**
  * Created by songoda on 2/24/2017.
@@ -52,7 +54,7 @@ public class CommandHandler implements CommandExecutor {
 
             sender.sendMessage(TextComponent.formatText("&7Page: &a" + page + " of " + of + " ======================"));
             if (page == 1) {
-                sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&7" + instance.getDescription().getVersion() + " Created by &5&l&oBrianna"));
+                sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&7" + instance.getDescription().getVersion() + " Created by &5&l&oBrianna"));
                 sender.sendMessage(TextComponent.formatText(" &8- &aes help &7Displays this page."));
                 if (sender.hasPermission("epicspawners.admin")) {
                     sender.sendMessage(TextComponent.formatText(" &8- &aes editor &7Opens the spawner editor."));
@@ -66,7 +68,7 @@ public class CommandHandler implements CommandExecutor {
             } else if (page == 3 && sender.hasPermission("epicspawners.admin")) {
                 sender.sendMessage(TextComponent.formatText(" &8- &aes boost <p:player, f:faction, t:town, i:islandOwner> <amount> [m:minute, h:hour, d:day, y:year] &7This allows you to boost the amount of spawns that are got from placed spawners."));
             } else {
-                sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "That page does not exist!"));
+                sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "That page does not exist!"));
             }
             sender.sendMessage("");
         } catch (Exception e) {
@@ -86,14 +88,14 @@ public class CommandHandler implements CommandExecutor {
                     }
                 } else if (args[0].equalsIgnoreCase("reload")) {
                     if (!sender.hasPermission("epicspawners.admin")) {
-                        sender.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
+                        sender.sendMessage(instance.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
                     } else {
                         instance.reload();
-                        sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&8Configuration and Language files reloaded."));
+                        sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&8Configuration and Language files reloaded."));
                     }
                 } else if (args[0].equalsIgnoreCase("change")) {
                     if (!sender.hasPermission("epicspawners.admin") && !sender.hasPermission("epicspawners.change.*") && !sender.hasPermission("epicspawners.change." + args[1].toUpperCase())) {
-                        sender.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
+                        sender.sendMessage(instance.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
                     } else {
                         Player p = (Player) sender;
                         Block b = p.getTargetBlock(null, 200);
@@ -128,23 +130,23 @@ public class CommandHandler implements CommandExecutor {
                                 }
                                 spawner.getCreatureSpawner().update();
                                 instance.getHologramHandler().processChange(b);
-                                sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&7Successfully changed this spawner to &6" + args[1] + "&7."));
+                                sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&7Successfully changed this spawner to &6" + args[1] + "&7."));
                             } catch (Exception ee) {
-                                sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&7That entity does not exist."));
+                                sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&7That entity does not exist."));
                             }
                         } else {
-                            sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&cThis is not a spawner."));
+                            sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&cThis is not a spawner."));
                         }
                     }
                 } else if (args[0].equalsIgnoreCase("editor")) {
                     if (!sender.hasPermission("epicspawners.admin")) {
-                        sender.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
+                        sender.sendMessage(instance.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
                     } else {
                         instance.getSpawnerEditor().openSpawnerSelector((Player) sender, 1);
                     }
                 } else if (args[0].equalsIgnoreCase("boost")) {
                     if (!sender.hasPermission("epicspawners.admin")) {
-                        sender.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
+                        sender.sendMessage(instance.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
                     } else {
                         if (args.length >= 3) {
                             if (args[1].contains("p:") || args[1].contains("player:") ||
@@ -153,7 +155,7 @@ public class CommandHandler implements CommandExecutor {
                                     args[1].contains("i:") || args[1].contains("island:")) {
                                 String[] arr = (args[1]).split(":");
                                 if (!AMath.isInt(args[2])) {
-                                    sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&6" + args[2] + " &7is not a number..."));
+                                    sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&6" + args[2] + " &7is not a number..."));
                                 } else {
 
                                     Calendar c = Calendar.getInstance();
@@ -180,7 +182,7 @@ public class CommandHandler implements CommandExecutor {
                                             c.add(Calendar.YEAR, Integer.parseInt(arr2[1]));
                                             response += " &7for &6" + arr2[1] + " years&7.";
                                         } else {
-                                            sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&7" + args[3] + " &7is invalid."));
+                                            sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&7" + args[3] + " &7is invalid."));
                                             return true;
                                         }
                                     } else {
@@ -196,7 +198,7 @@ public class CommandHandler implements CommandExecutor {
 
                                     if (arr[0].equalsIgnoreCase("p") || arr[0].equalsIgnoreCase("player")) {
                                         if (Bukkit.getOfflinePlayer(arr[1]) == null) {
-                                            sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&cThat player does not exist..."));
+                                            sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&cThat player does not exist..."));
                                         } else {
                                             start += "The player";
                                             boostType = BoostType.PLAYER;
@@ -204,7 +206,7 @@ public class CommandHandler implements CommandExecutor {
                                         }
                                     } else if (arr[0].equalsIgnoreCase("f") || arr[0].equalsIgnoreCase("faction")) {
                                         if (instance.getFactionId(arr[1]) == null) {
-                                            sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&cThat faction does not exist..."));
+                                            sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&cThat faction does not exist..."));
                                             return true;
                                         }
 
@@ -213,7 +215,7 @@ public class CommandHandler implements CommandExecutor {
                                         boostObject = instance.getFactionId(arr[1]);
                                     } else if (arr[0].equalsIgnoreCase("t") || arr[0].equalsIgnoreCase("town")) {
                                         if (instance.getTownId(arr[1]) == null) {
-                                            sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&cThat town does not exist..."));
+                                            sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&cThat town does not exist..."));
                                             return true;
                                         }
 
@@ -222,7 +224,7 @@ public class CommandHandler implements CommandExecutor {
                                         boostObject = instance.getTownId(arr[1]);
                                     } else if (arr[0].equalsIgnoreCase("i") || arr[0].equalsIgnoreCase("island")) {
                                         if (instance.getIslandId(arr[1]) == null) {
-                                            sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&cThat island does not exist..."));
+                                            sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&cThat island does not exist..."));
                                             return true;
                                         }
 
@@ -238,40 +240,40 @@ public class CommandHandler implements CommandExecutor {
 
                                     BoostData boostData = new BoostData(boostType, Integer.parseInt(args[2]), c.getTime().getTime(), boostObject);
                                     instance.getBoostManager().addBoostToSpawner(boostData);
-                                    sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + start + response));
+                                    sender.sendMessage(TextComponent.formatText(instance.getPrefix() + start + response));
                                 }
                             } else {
-                                sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&6" + args[1] + " &7this is incorrect"));
+                                sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&6" + args[1] + " &7this is incorrect"));
                             }
                         } else {
-                            sender.sendMessage(instance.references.getPrefix() + TextComponent.formatText("&7Syntax error..."));
+                            sender.sendMessage(instance.getPrefix() + TextComponent.formatText("&7Syntax error..."));
                         }
                     }
                 } else if (args[0].equalsIgnoreCase("settings")) {
                     if (!sender.hasPermission("epicspawners.admin")) {
-                        sender.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
+                        sender.sendMessage(instance.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
                     } else {
                         Player p = (Player) sender;
                         instance.getSettingsManager().openSettingsManager(p);
                     }
                 } else if (args[0].equalsIgnoreCase("shop")) {
                     if (!sender.hasPermission("epicspawners.openshop")) {
-                        sender.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
+                        sender.sendMessage(instance.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
                         return true;
                     }
                     Player p = (Player) sender;
                     instance.getShop().open(p, 1);
                 } else if (args[0].equalsIgnoreCase("give")) {
                     if (args.length <= 3 && args.length != 6) {
-                        sender.sendMessage(instance.references.getPrefix() + TextComponent.formatText("&7Syntax error..."));
+                        sender.sendMessage(instance.getPrefix() + TextComponent.formatText("&7Syntax error..."));
                         return true;
                     }
                     if (!sender.hasPermission("epicspawners.admin")) {
-                        sender.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
+                        sender.sendMessage(instance.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
                         return true;
                     }
                     if (Bukkit.getPlayerExact(args[1]) == null && !args[1].toLowerCase().equals("all")) {
-                        sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&cThat username does not exist, or the user is not online!"));
+                        sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&cThat username does not exist, or the user is not online!"));
                         return true;
                     }
                     int multi = 1;
@@ -285,7 +287,7 @@ public class CommandHandler implements CommandExecutor {
                     }
 
                     if (data == null && !args[2].equalsIgnoreCase("random")) {
-                        sender.sendMessage(instance.references.getPrefix() + TextComponent.formatText(instance.references.getPrefix() + "&7The entity Type &6" + args[2] + " &7does not exist. Try one of these:"));
+                        sender.sendMessage(instance.getPrefix() + TextComponent.formatText(instance.getPrefix() + "&7The entity Type &6" + args[2] + " &7does not exist. Try one of these:"));
                         StringBuilder list = new StringBuilder();
 
                         for (SpawnerData spawnerData : instance.getSpawnerManager().getAllSpawnerData()) {
@@ -300,7 +302,7 @@ public class CommandHandler implements CommandExecutor {
                         }
                         if (args.length == 4) {
                             if (!AMath.isInt(args[3])) {
-                                sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&6" + args[3] + "&7 is not a number."));
+                                sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&6" + args[3] + "&7 is not a number."));
                                 return true;
                             }
                             int amt = Integer.parseInt(args[3]);
@@ -308,21 +310,21 @@ public class CommandHandler implements CommandExecutor {
                             if (args[1].toLowerCase().equals("all")) {
                                 for (Player pl : Bukkit.getOnlinePlayers()) {
                                     pl.getInventory().addItem(spawnerItem);
-                                    pl.sendMessage(TextComponent.formatText(instance.references.getPrefix() + instance.getLocale().getMessage("command.give.success", amt, Methods.compileName(data.getIdentifyingName(), multi, false))));
+                                    pl.sendMessage(TextComponent.formatText(instance.getPrefix() + instance.getLocale().getMessage("command.give.success", amt, Methods.compileName(data.getIdentifyingName(), multi, false))));
                                 }
                             } else {
                                 Player pl = Bukkit.getPlayerExact(args[1]);
                                 pl.getInventory().addItem(spawnerItem);
-                                pl.sendMessage(TextComponent.formatText(instance.references.getPrefix() + instance.getLocale().getMessage("command.give.success", amt, Methods.compileName(data.getIdentifyingName(), multi, false))));
+                                pl.sendMessage(TextComponent.formatText(instance.getPrefix() + instance.getLocale().getMessage("command.give.success", amt, Methods.compileName(data.getIdentifyingName(), multi, false))));
 
                             }
                         } else {
                             if (!AMath.isInt(args[3])) {
-                                sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&6" + args[3] + "&7 is not a number."));
+                                sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&6" + args[3] + "&7 is not a number."));
                                 return true;
                             }
                             if (!AMath.isInt(args[4])) {
-                                sender.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&6" + args[4] + "&7 is not a number."));
+                                sender.sendMessage(TextComponent.formatText(instance.getPrefix() + "&6" + args[4] + "&7 is not a number."));
                                 return true;
                             }
                             int amt = Integer.parseInt(args[3]);
@@ -331,12 +333,12 @@ public class CommandHandler implements CommandExecutor {
                             if (args[1].toLowerCase().equals("all")) {
                                 for (Player pl : Bukkit.getOnlinePlayers()) {
                                     pl.getInventory().addItem(spawnerItem);
-                                    pl.sendMessage(TextComponent.formatText(instance.references.getPrefix() + instance.getLocale().getMessage("command.give.success", amt, Methods.compileName(data.getIdentifyingName(), multi, false))));
+                                    pl.sendMessage(TextComponent.formatText(instance.getPrefix() + instance.getLocale().getMessage("command.give.success", amt, Methods.compileName(data.getIdentifyingName(), multi, false))));
                                 }
                             } else {
                                 Player pl = Bukkit.getPlayerExact(args[1]);
                                 pl.getInventory().addItem(spawnerItem);
-                                pl.sendMessage(TextComponent.formatText(instance.references.getPrefix() + instance.getLocale().getMessage("command.give.success", amt, Methods.compileName(data.getIdentifyingName(), multi, false))));
+                                pl.sendMessage(TextComponent.formatText(instance.getPrefix() + instance.getLocale().getMessage("command.give.success", amt, Methods.compileName(data.getIdentifyingName(), multi, false))));
 
                             }
                         }
@@ -344,14 +346,14 @@ public class CommandHandler implements CommandExecutor {
                 }
             } else if (cmd.getName().equalsIgnoreCase("SpawnerShop")) {
                 if (!sender.hasPermission("epicspawners.openshop")) {
-                    sender.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
+                    sender.sendMessage(instance.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
                 } else {
                     Player p = (Player) sender;
                     instance.getShop().open(p, 1);
                 }
             } else if (cmd.getName().equalsIgnoreCase("SpawnerStats")) {
                 if (!sender.hasPermission("epicspawners.stats")) {
-                    sender.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
+                    sender.sendMessage(instance.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
                     return true;
                 }
 
@@ -394,11 +396,11 @@ public class CommandHandler implements CommandExecutor {
 
 
                 if (instance.getPlayerActionManager().getPlayerAction(p).getEntityKills().size() == 0) {
-                    p.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("interface.spawnerstats.nokills"));
+                    p.sendMessage(instance.getPrefix() + instance.getLocale().getMessage("interface.spawnerstats.nokills"));
                     return true;
                 }
 
-                p.sendMessage(instance.references.getPrefix());
+                p.sendMessage(instance.getPrefix());
                 p.sendMessage(instance.getLocale().getMessage("interface.spawnerstats.prefix"));
                 for (Map.Entry<EntityType, Integer> entry : instance.getPlayerActionManager().getPlayerAction(p).getEntityKills().entrySet()) {
                     int goal = instance.getConfig().getInt("Spawner Drops.Kills Needed for Drop");
@@ -410,7 +412,7 @@ public class CommandHandler implements CommandExecutor {
 
                     ItemStack it = new ItemStack(Material.PLAYER_HEAD);
 
-                    ItemStack item = instance.getHeads().addTexture(it, spawnerData);
+                    ItemStack item = HeadType.addTexture(it, spawnerData);
 
                     ItemMeta itemmeta = item.getItemMeta();
                     ArrayList<String> lore = new ArrayList<>();

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,6 +20,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -38,7 +40,8 @@ public class SettingsManager implements Listener {
     private static ConfigWrapper defs;
 
     private String pluginName = "EpicSpawners";
-    private Map<Player, String> cat = new HashMap<>();
+    private final Map<UUID, String> cat = new HashMap<>();
+    private final Map<UUID, String> current = new HashMap<>();
 
     private final EpicSpawnersPlugin plugin;
 
@@ -50,8 +53,6 @@ public class SettingsManager implements Listener {
         defs.createNewFile("Loading data file", pluginName + " SettingDefinitions file");
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
-
-    private Map<Player, String> current = new HashMap<>();
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
@@ -68,17 +69,16 @@ public class SettingsManager implements Listener {
             if (Methods.isStainedGlassPane(clickedItem.getType())) return;
 
             String type = ChatColor.stripColor(clickedItem.getItemMeta().getDisplayName());
-            this.cat.put((Player) event.getWhoClicked(), type);
-            this.openEditor((Player) event.getWhoClicked());
+            this.cat.put(event.getWhoClicked().getUniqueId(), type);
+            this.openEditor(event.getWhoClicked());
         } else if (event.getInventory().getTitle().equals(pluginName + " Settings Editor")) {
             event.setCancelled(true);
             if (Methods.isStainedGlassPane(clickedItem.getType())) return;
 
-            Player player = (Player) event.getWhoClicked();
+            HumanEntity player = event.getWhoClicked();
+            String key = cat.get(player.getUniqueId()) + "." + ChatColor.stripColor(clickedItem.getItemMeta().getDisplayName());
 
-            String key = cat.get(player) + "." + ChatColor.stripColor(clickedItem.getItemMeta().getDisplayName());
-
-            if (plugin.getConfig().get(key).getClass().getName().equals("java.lang.Boolean")) {
+            if (plugin.getConfig().isBoolean(key)) {
                 this.plugin.getConfig().set(key, !plugin.getConfig().getBoolean(key));
                 this.finishEditing(player);
             } else {
@@ -90,9 +90,9 @@ public class SettingsManager implements Listener {
     @EventHandler
     public void onChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
-        if (!current.containsKey(player)) return;
+        if (!current.containsKey(player.getUniqueId())) return;
 
-        String value = current.get(player);
+        String value = current.get(player.getUniqueId());
         FileConfiguration config = plugin.getConfig();
         if (config.isInt(value)) {
             config.set(value, Integer.parseInt(event.getMessage()));
@@ -106,15 +106,15 @@ public class SettingsManager implements Listener {
         event.setCancelled(true);
     }
 
-    public void finishEditing(Player player) {
-        this.current.remove(player);
+    public void finishEditing(HumanEntity player) {
+        this.current.remove(player.getUniqueId());
         this.plugin.saveConfig();
         this.openEditor(player);
     }
 
 
-    public void editObject(Player player, String current) {
-        this.current.put(player, ChatColor.stripColor(current));
+    public void editObject(HumanEntity player, String current) {
+        this.current.put(player.getUniqueId(), ChatColor.stripColor(current));
 
         player.closeInventory();
         player.sendMessage("");
@@ -148,13 +148,13 @@ public class SettingsManager implements Listener {
         player.openInventory(inventory);
     }
 
-    public void openEditor(Player player) {
+    public void openEditor(HumanEntity player) {
         Inventory inventory = Bukkit.createInventory(null, 54, pluginName + " Settings Editor");
         FileConfiguration config = plugin.getConfig();
 
         int slot = 0;
-        for (String key : config.getConfigurationSection(cat.get(player)).getKeys(true)) {
-            String fKey = cat.get(player) + "." + key;
+        for (String key : config.getConfigurationSection(cat.get(player.getUniqueId())).getKeys(true)) {
+            String fKey = cat.get(player.getUniqueId()) + "." + key;
             ItemStack item = new ItemStack(Material.DIAMOND_HELMET);
             ItemMeta meta = item.getItemMeta();
             meta.setDisplayName(TextComponent.formatText("&6" + key));

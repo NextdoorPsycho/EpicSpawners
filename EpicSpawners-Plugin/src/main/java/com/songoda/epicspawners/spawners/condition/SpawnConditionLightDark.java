@@ -3,7 +3,6 @@ package com.songoda.epicspawners.spawners.condition;
 import com.songoda.epicspawners.api.spawner.Spawner;
 import com.songoda.epicspawners.api.spawner.condition.SpawnCondition;
 import org.bukkit.Location;
-import org.bukkit.World;
 
 public class SpawnConditionLightDark implements SpawnCondition {
 
@@ -41,8 +40,8 @@ public class SpawnConditionLightDark implements SpawnCondition {
                 return !isDark(location);
             case DARK:
                 return isDark(location);
+            default: return true;
         }
-        return true;
     }
 
     public boolean isDark(Location location) {

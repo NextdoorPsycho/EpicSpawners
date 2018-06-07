@@ -85,7 +85,6 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
     public Map<Player, Integer> page = new HashMap<>();
     public ConfigWrapper dataFile = new ConfigWrapper(this, "", "data.yml");
     public ConfigWrapper spawnerFile = new ConfigWrapper(this, "", "spawners.yml");
-    public References references = null;
     private ConfigWrapper langFile = new ConfigWrapper(this, "", "lang.yml");
     private ConfigWrapper hooksFile = new ConfigWrapper(this, "", "hooks.yml");
     private SpawnManager spawnManager;
@@ -101,7 +100,6 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
     private SpawnerParticleTask particleTask;
     private SpawnerSpawnTask spawnerCustomSpawnTask;
     private SpawnerEditor spawnerEditor;
-    private Heads heads;
     private Shop shop;
     private Locale locale;
 
@@ -109,6 +107,8 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
     private ServerVersion serverVersion = ServerVersion.fromPackageName(Bukkit.getServer().getClass().getPackage().getName());
     private List<ProtectionPluginHook> protectionHooks = new ArrayList<>();
     private ClaimableProtectionPluginHook factionsHook, townyHook, aSkyblockHook, uSkyblockHook;
+
+    private String prefix;
 
     public static EpicSpawnersPlugin getInstance() {
         return INSTANCE;
@@ -140,7 +140,6 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
         console.sendMessage(TextComponent.formatText("&7EpicSpawners " + this.getDescription().getVersion() + " by &5Brianna <3&7!"));
         console.sendMessage(TextComponent.formatText("&7Action: &aEnabling&7..."));
 
-        this.heads = new Heads(this);
         this.settingsManager = new SettingsManager(this);
 
         this.setupConfig();
@@ -156,13 +155,14 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
         this.dataFile.createNewFile("Loading Data File", "EpicSpawners Data File");
         this.loadDataFile();
 
-        this.references = new References();
         this.boostManager = new BoostManager();
         this.spawnManager = new SpawnManager();
         this.spawnerManager = new ESpawnerManager();
         this.blacklistHandler = new BlacklistHandler();
         this.hologramHandler = new HologramHandler(this);
         this.playerActionManager = new PlayerActionManager();
+
+        this.prefix = locale.getMessage("general.nametag.prefix").trim() + " ";
 
         loadSpawnersFromFile();
 
@@ -663,11 +663,10 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
         this.langFile.createNewFile("Loading language file", "EpicSpawners language file");
         this.spawnerFile.createNewFile("Loading Spawners File", "EpicSpawners Spawners File");
         this.hooksFile.createNewFile("Loading hookHandler File", "EpicSpawners Spawners File");
-        this.references = new References();
         this.blacklistHandler.reload();
         this.loadSpawnersFromFile();
         this.reloadConfig();
-        //this.saveConfig();
+        this.prefix = locale.getMessage("general.nametag.prefix").trim() + " ";
     }
 
     public Locale getLocale() {
@@ -708,10 +707,6 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
 
     public Shop getShop() {
         return shop;
-    }
-
-    public Heads getHeads() {
-        return heads;
     }
 
     @Deprecated
@@ -762,6 +757,10 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
 
     public boolean isInIsland(String name, Location l) {
         return (aSkyblockHook != null && aSkyblockHook.isInClaim(l, name)) || (uSkyblockHook != null && uSkyblockHook.isInClaim(l, name));
+    }
+
+    public String getPrefix() {
+        return prefix;
     }
 
     @SuppressWarnings("deprecation")

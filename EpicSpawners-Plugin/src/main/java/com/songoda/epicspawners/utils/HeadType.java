@@ -1,10 +1,16 @@
 package com.songoda.epicspawners.utils;
 
+import com.songoda.arconix.plugin.Arconix;
+import com.songoda.epicspawners.api.spawner.SpawnerData;
+
+import org.bukkit.inventory.ItemStack;
+
 /**
  * Created by songoda on 3/20/2017.
  */
 public enum HeadType {
 
+    // Entity heads
     BAT("http://textures.minecraft.net/texture/978862a56119227aaad4b7c246c8b2256db985db0951f55b0a1f8616c191f"),
     BLAZE("http://textures.minecraft.net/texture/b78ef2e4cf2c41a2d14bfde9caff10219f5b1bf5b35a49eb51c6467882cb5f0"),
     CHICKEN("http://textures.minecraft.net/texture/1638469a599ceef7207537603248a9ab11ff591fd378bea4735b346a7fae893"),
@@ -55,7 +61,11 @@ public enum HeadType {
     ZOMBIE("http://textures.minecraft.net/texture/56fc854bb84cf4b7697297973e02b79bc10698460b51a639c60e5e417734e11"),
     ZOMBIE_HORSE("http://textures.minecraft.net/texture/d898e3eacff9949a9de9777ddfada8a7f62a4102de47b54db35f9f843e1ce4"),
     ZOMBIE_VILLAGER("http://textures.minecraft.net/texture/1a207a2b872fe8dd22ce5e27fc3263622621635efd8ea6abbdf317f99c5843"),
-    DROPPED_ITEM("http://textures.minecraft.net/texture/452fe4ce1f1d53a12ed443eeba7297e81da581e0c7a39954d9d7bba7de59c46");
+    DROPPED_ITEM("http://textures.minecraft.net/texture/452fe4ce1f1d53a12ed443eeba7297e81da581e0c7a39954d9d7bba7de59c46"),
+
+    // Utility heads
+    ARROW_LEFT("http://textures.minecraft.net/texture/3ebf907494a935e955bfcadab81beafb90fb9be49c7026ba97d798d5f1a23"),
+    ARROW_RIGHT("http://textures.minecraft.net/texture/1b6f1a25b6bc199946472aedb370522584ff6f4e83221e5946bd2e41b5ca13b");
 
     private final String url;
 
@@ -65,6 +75,25 @@ public enum HeadType {
 
     public String getUrl() {
         return url;
+    }
+
+    @SuppressWarnings("deprecation")
+    public ItemStack addTexture(ItemStack item) {
+        return Arconix.pl().getApi().getGUI().addTexture(item, url);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static ItemStack addTexture(ItemStack item, SpawnerData spawnerData) {
+        HeadType type = getHeadTypeOrDefault(spawnerData.getIdentifyingName().toUpperCase().replace(" ", "_"), HeadType.DROPPED_ITEM);
+        return Arconix.pl().getApi().getGUI().addTexture(item, type.getUrl());
+    }
+
+    public static HeadType getHeadTypeOrDefault(String name, HeadType defaultValue) {
+        try {
+            return HeadType.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return defaultValue;
+        }
     }
 
 }

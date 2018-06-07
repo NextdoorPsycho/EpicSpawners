@@ -4,12 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.songoda.arconix.api.methods.formatting.TextComponent;
-import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicspawners.EpicSpawnersPlugin;
 import com.songoda.epicspawners.api.spawner.SpawnerData;
 import com.songoda.epicspawners.utils.Debugger;
+import com.songoda.epicspawners.utils.HeadType;
 import com.songoda.epicspawners.utils.Methods;
-import com.songoda.epicspawners.utils.ServerVersion;
 
 import net.milkbowl.vault.economy.Economy;
 
@@ -76,7 +75,7 @@ public class Shop {
                 if (place == 17 || place == (max22 - 18)) place++;
 
                 ItemStack it = new ItemStack(Material.PLAYER_HEAD);
-                ItemStack item = instance.getHeads().addTexture(it, spawnerData);
+                ItemStack item = HeadType.addTexture(it, spawnerData);
 
                 if (spawnerData.getDisplayItem() != null) {
                     Material mat = spawnerData.getDisplayItem();
@@ -119,13 +118,13 @@ public class Shop {
             exit.setItemMeta(exitmeta);
 
             ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-            head = Arconix.pl().getApi().getGUI().addTexture(head, "http://textures.minecraft.net/texture/1b6f1a25b6bc199946472aedb370522584ff6f4e83221e5946bd2e41b5ca13b");
+            head = HeadType.ARROW_RIGHT.addTexture(head);
             SkullMeta headMeta = (SkullMeta) head.getItemMeta();
             headMeta.setDisplayName(instance.getLocale().getMessage("general.nametag.next"));
             head.setItemMeta(headMeta);
 
             ItemStack head2 = new ItemStack(Material.PLAYER_HEAD);
-            head2 = Arconix.pl().getApi().getGUI().addTexture(head2, "http://textures.minecraft.net/texture/3ebf907494a935e955bfcadab81beafb90fb9be49c7026ba97d798d5f1a23");
+            head2 = HeadType.ARROW_LEFT.addTexture(head2);
             SkullMeta head2Meta = (SkullMeta) head2.getItemMeta();
             head2Meta.setDisplayName(instance.getLocale().getMessage("general.nametag.back"));
             head2.setItemMeta(head2Meta);
@@ -204,7 +203,7 @@ public class Shop {
 
             ItemStack it = new ItemStack(Material.PLAYER_HEAD, amt);
 
-            ItemStack item = EpicSpawnersPlugin.getInstance().getHeads().addTexture(it, spawnerData);
+            ItemStack item = HeadType.addTexture(it, spawnerData);
 
 
             if (spawnerData.getDisplayItem() != null) {
@@ -275,7 +274,7 @@ public class Shop {
             inventory.setItem(8, exit);
 
             ItemStack head2 = new ItemStack(Material.PLAYER_HEAD);
-            head2 = Arconix.pl().getApi().getGUI().addTexture(head2, "http://textures.minecraft.net/texture/3ebf907494a935e955bfcadab81beafb90fb9be49c7026ba97d798d5f1a23");;
+            head2 = HeadType.ARROW_LEFT.addTexture(head2);
             SkullMeta head2Meta = (SkullMeta) head2.getItemMeta();
             head2Meta.setDisplayName(instance.getLocale().getMessage("general.nametag.back"));
             head2.setItemMeta(head2Meta);
@@ -308,7 +307,7 @@ public class Shop {
             net.milkbowl.vault.economy.Economy econ = rsp.getProvider();
             double price = spawnerData.getShopPrice() * amount;
             if (!p.isOp() && !econ.has(p, price)) {
-                p.sendMessage(EpicSpawnersPlugin.getInstance().references.getPrefix() + instance.getLocale().getMessage("event.shop.cannotafford"));
+                p.sendMessage(EpicSpawnersPlugin.getInstance().getPrefix() + instance.getLocale().getMessage("event.shop.cannotafford"));
                 return;
             }
             ItemStack item = spawnerData.toItemStack(amount);
@@ -316,7 +315,7 @@ public class Shop {
 
             p.getInventory().addItem(item);
 
-            p.sendMessage(EpicSpawnersPlugin.getInstance().references.getPrefix() + instance.getLocale().getMessage("event.shop.purchasesuccess"));
+            p.sendMessage(EpicSpawnersPlugin.getInstance().getPrefix() + instance.getLocale().getMessage("event.shop.purchasesuccess"));
 
 
             if (!p.isOp()) {
