@@ -1,6 +1,5 @@
 package com.songoda.epicspawners.listeners;
 
-import com.songoda.arconix.api.methods.serialize.Serialize;
 import com.songoda.epicspawners.EpicSpawnersPlugin;
 import com.songoda.epicspawners.api.spawner.Spawner;
 import com.songoda.epicspawners.api.events.SpawnerChangeEvent;
@@ -11,7 +10,6 @@ import com.songoda.epicspawners.spawners.object.ESpawner;
 import com.songoda.epicspawners.utils.Debugger;
 import com.songoda.epicspawners.utils.Methods;
 import com.songoda.epicspawners.utils.Reflection;
-import com.songoda.epicspawners.utils.ServerVersion;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -26,8 +24,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.SpawnEggMeta;
-import org.bukkit.material.SpawnEgg;
 
 /**
  * Created by songoda on 2/25/2017.
@@ -76,10 +72,9 @@ public class InteractListeners implements Listener {
                 }
             }
 
-            // TODO: Figure out a good way to work with monster eggs... - Choco
-            if (e.getClickedBlock().getType() == Material.MOB_SPAWNER && is == Material.MONSTER_EGG && EpicSpawnersPlugin.getInstance().getBlacklistHandler().isBlacklisted(p, true))
+            if (e.getClickedBlock().getType() == Material.MOB_SPAWNER && is.toString().contains("SPAWN_EGG") && EpicSpawnersPlugin.getInstance().getBlacklistHandler().isBlacklisted(p, true))
                 e.setCancelled(true);
-            if (!(e.getClickedBlock().getType() == Material.MOB_SPAWNER && is == Material.MONSTER_EGG && !EpicSpawnersPlugin.getInstance().getBlacklistHandler().isBlacklisted(p, true))) {
+            if (!(e.getClickedBlock().getType() == Material.MOB_SPAWNER && is.toString().contains("SPAWN_EGG") && !EpicSpawnersPlugin.getInstance().getBlacklistHandler().isBlacklisted(p, true))) {
                 return;
             }
             SpawnerManager spawnerManager = instance.getSpawnerManager();
@@ -97,6 +92,7 @@ public class InteractListeners implements Listener {
             int amt = p.getInventory().getItemInMainHand().getAmount();
             EntityType itype;
 
+            // TODO: This does not work in 1.13+
             String str = Reflection.getNBTTagCompound(Reflection.getNMSItemStack(i)).toString();
             if (str.contains("minecraft:"))
                 itype = EntityType.fromName(str.substring(str.indexOf("minecraft:") + 10, str.indexOf("\"}")));
@@ -162,8 +158,7 @@ public class InteractListeners implements Listener {
             if (e.getItem() != null) {
                 is = item.getType();
             }
-            if (is == Material.MONSTER_EGG)
-                return;
+            if (is.toString().contains("SPAWN_EGG")) return;
             if (e.getClickedBlock().getType() == Material.MOB_SPAWNER && is == Material.MOB_SPAWNER && !EpicSpawnersPlugin.getInstance().getBlacklistHandler().isBlacklisted(player, true)) {
 
                 Spawner spawner = instance.getSpawnerManager().getSpawnerFromWorld(location);
