@@ -105,6 +105,7 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
     private Shop shop;
     private Locale locale;
 
+    @Deprecated
     private ServerVersion serverVersion = ServerVersion.fromPackageName(Bukkit.getServer().getClass().getPackage().getName());
     private List<ProtectionPluginHook> protectionHooks = new ArrayList<>();
     private ClaimableProtectionPluginHook factionsHook, townyHook, aSkyblockHook, uSkyblockHook;
@@ -305,12 +306,9 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
         manager.registerEvents(new InteractListeners(this), this);
         manager.registerEvents(new InventoryListeners(this), this);
         manager.registerEvents(new SpawnerListeners(this), this);
+        manager.registerEvents(new PlayerJoinListeners(), this);
 
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::saveToFile, 6000, 6000);
-
-        if (isServerVersionAtLeast(ServerVersion.V1_8)) {
-            Bukkit.getPluginManager().registerEvents(new PlayerJoinListeners(), this);
-        }
         console.sendMessage(TextComponent.formatText("&a============================="));
 
         // Register default hooks
@@ -716,18 +714,22 @@ public class EpicSpawnersPlugin extends JavaPlugin implements EpicSpawners {
         return heads;
     }
 
+    @Deprecated
     public ServerVersion getServerVersion() {
         return serverVersion;
     }
 
+    @Deprecated
     public boolean isServerVersion(ServerVersion version) {
         return serverVersion == version;
     }
 
+    @Deprecated
     public boolean isServerVersion(ServerVersion... versions) {
         return ArrayUtils.contains(versions, serverVersion);
     }
 
+    @Deprecated
     public boolean isServerVersionAtLeast(ServerVersion version) {
         return serverVersion.ordinal() >= version.ordinal();
     }

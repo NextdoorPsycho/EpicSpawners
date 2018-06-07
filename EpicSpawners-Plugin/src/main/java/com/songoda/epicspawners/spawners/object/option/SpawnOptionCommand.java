@@ -80,8 +80,6 @@ public class SpawnOptionCommand implements SpawnOption {
     }
 
     private Player getNearestPlayer(Location location) {
-        if (EpicSpawnersPlugin.getInstance().isServerVersion(ServerVersion.V1_7)) return null;
-
         String[] playerRadius = EpicSpawnersPlugin.getInstance().getConfig().getString("Main.Radius To Search Around Spawners").split("x");
         if (playerRadius.length != 3) return null;
 

@@ -37,7 +37,6 @@ import com.songoda.epicspawners.boost.BoostType;
 import com.songoda.epicspawners.player.MenuType;
 import com.songoda.epicspawners.utils.Debugger;
 import com.songoda.epicspawners.utils.Methods;
-import com.songoda.epicspawners.utils.ServerVersion;
 
 import net.milkbowl.vault.economy.Economy;
 
@@ -51,6 +50,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class ESpawner implements Spawner {
 
@@ -97,15 +97,15 @@ public class ESpawner implements Spawner {
 
         if (getFirstStack().getSpawnerData() == null) return;
 
-        float x = (float) (0 + (Math.random() * .8));
-        float y = (float) (0 + (Math.random() * .8));
-        float z = (float) (0 + (Math.random() * .8));
+        double x = (Math.random() * .8);
+        double y = (Math.random() * .8);
+        double z = (Math.random() * .8);
 
         Location particleLocation = location.clone();
         particleLocation.add(.5, .5, .5);
         //ToDo: Only currently works for the first spawner Type in the stack. this is not how it should work.
         SpawnerData spawnerData = getFirstStack().getSpawnerData();
-        Arconix.pl().getApi().packetLibrary.getParticleManager().broadcastParticle(particleLocation, x, y, z, 0, spawnerData.getSpawnerSpawnParticle().getEffect(), spawnerData.getParticleDensity().getSpawnerSpawn());
+        particleLocation.getWorld().spawnParticle(spawnerData.getSpawnerSpawnParticle().getEffect(), particleLocation, spawnerData.getParticleDensity().getEffect(), x, y, z, 0);
 
         for (SpawnerStack stack : getSpawnerStacks()) {
             ((ESpawnerData)stack.getSpawnerData()).spawn(this, stack);
@@ -177,7 +177,7 @@ public class ESpawner implements Spawner {
             else if (showAmt == 0)
                 showAmt = 1;
 
-            ItemStack item = new ItemStack(Material.SKULL_ITEM, showAmt, (byte) 3);
+            ItemStack item = new ItemStack(Material.PLAYER_HEAD, showAmt);
             if (spawnerStacks.size() != 1) {
                 item = EpicSpawnersPlugin.getInstance().getHeads().addTexture(item, instance.getSpawnerManager().getSpawnerData("omni"));
             } else {
@@ -443,34 +443,23 @@ public class ESpawner implements Spawner {
             i.setItem(25, Methods.getBackgroundGlass(true));
             i.setItem(26, Methods.getBackgroundGlass(true));
 
-            ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (byte) 3);
-            ItemStack skull = head;
-            boolean v1_7 = EpicSpawnersPlugin.getInstance().isServerVersion(ServerVersion.V1_7);
-            if (!v1_7)
-                skull = Arconix.pl().getApi().getGUI().addTexture(head, "http://textures.minecraft.net/texture/1b6f1a25b6bc199946472aedb370522584ff6f4e83221e5946bd2e41b5ca13b");
-            SkullMeta skullMeta = (SkullMeta) skull.getItemMeta();
-            if (v1_7)
-                skullMeta.setOwner("MHF_ArrowRight");
-            skull.setDurability((short) 3);
-            skullMeta.setDisplayName(TextComponent.formatText("&6&l+1"));
-            skull.setItemMeta(skullMeta);
+            ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+            head = Arconix.pl().getApi().getGUI().addTexture(head, "http://textures.minecraft.net/texture/1b6f1a25b6bc199946472aedb370522584ff6f4e83221e5946bd2e41b5ca13b");
+            SkullMeta headMeta = (SkullMeta) head.getItemMeta();
+            headMeta.setDisplayName(TextComponent.formatText("&6&l+1"));
+            head.setItemMeta(headMeta);
 
-            ItemStack head2 = new ItemStack(Material.SKULL_ITEM, 1, (byte) 3);
-            ItemStack skull2 = head2;
-            if (!v1_7)
-                skull2 = Arconix.pl().getApi().getGUI().addTexture(head2, "http://textures.minecraft.net/texture/3ebf907494a935e955bfcadab81beafb90fb9be49c7026ba97d798d5f1a23");
-            SkullMeta skull2Meta = (SkullMeta) skull2.getItemMeta();
-            if (v1_7)
-                skullMeta.setOwner("MHF_ArrowLeft");
-            skull2.setDurability((short) 3);
-            skull2Meta.setDisplayName(TextComponent.formatText("&6&l-1"));
-            skull2.setItemMeta(skull2Meta);
+            ItemStack head2 = new ItemStack(Material.PLAYER_HEAD);
+            head2 = Arconix.pl().getApi().getGUI().addTexture(head2, "http://textures.minecraft.net/texture/3ebf907494a935e955bfcadab81beafb90fb9be49c7026ba97d798d5f1a23");
+            SkullMeta head2Meta = (SkullMeta) head2.getItemMeta();
+            head2Meta.setDisplayName(TextComponent.formatText("&6&l-1"));
+            head2.setItemMeta(head2Meta);
 
             if (amt != 1) {
-                i.setItem(0, skull2);
+                i.setItem(0, head2);
             }
             if (amt < EpicSpawnersPlugin.getInstance().getConfig().getInt("Spawner Boosting.Max Multiplier For A Spawner Boost")) {
-                i.setItem(8, skull);
+                i.setItem(8, head);
             }
 
             p.openInventory(i);
@@ -600,17 +589,16 @@ public class ESpawner implements Spawner {
                     place++;
                 if (place == (max22 - 18))
                     place++;
-                ItemStack it = new ItemStack(Material.SKULL_ITEM, 1, (byte) 3);
-
-                ItemStack item = EpicSpawnersPlugin.getInstance().getHeads().addTexture(it, spawnerData);
+                ItemStack it = new ItemStack(Material.PLAYER_HEAD);
+                it = EpicSpawnersPlugin.getInstance().getHeads().addTexture(it, spawnerData);
 
                 if (spawnerData.getDisplayItem() != null) {
                     Material mat = spawnerData.getDisplayItem();
                     if (!mat.equals(Material.AIR))
-                        item = new ItemStack(mat, 1);
+                        it = new ItemStack(mat, 1);
                 }
 
-                ItemMeta itemmeta = item.getItemMeta();
+                ItemMeta itemmeta = it.getItemMeta();
                 String name = Methods.compileName(spawnerData.getIdentifyingName(), 1, true);
                 ArrayList<String> lore = new ArrayList<>();
                 double price = spawnerData.getConvertPrice() * getSpawnerDataCount();
@@ -623,8 +611,8 @@ public class ESpawner implements Spawner {
                 lore.add(loreString);
                 itemmeta.setLore(lore);
                 itemmeta.setDisplayName(name);
-                item.setItemMeta(itemmeta);
-                i.setItem(place, item);
+                it.setItemMeta(itemmeta);
+                i.setItem(place, it);
                 place++;
             }
 
@@ -645,28 +633,17 @@ public class ESpawner implements Spawner {
             exitmeta.setDisplayName(EpicSpawnersPlugin.getInstance().getLocale().getMessage("general.nametag.exit"));
             exit.setItemMeta(exitmeta);
 
-            ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (byte) 3);
-            ItemStack skull = head;
-            boolean v1_7 = EpicSpawnersPlugin.getInstance().isServerVersion(ServerVersion.V1_7);
-            if (!v1_7)
-                skull = Arconix.pl().getApi().getGUI().addTexture(head, "http://textures.minecraft.net/texture/1b6f1a25b6bc199946472aedb370522584ff6f4e83221e5946bd2e41b5ca13b");
-            SkullMeta skullMeta = (SkullMeta) skull.getItemMeta();
-            if (v1_7)
-                skullMeta.setOwner("MHF_ArrowRight");
-            skull.setDurability((short) 3);
-            skullMeta.setDisplayName(EpicSpawnersPlugin.getInstance().getLocale().getMessage("general.nametag.next"));
-            skull.setItemMeta(skullMeta);
+            ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+            head = Arconix.pl().getApi().getGUI().addTexture(head, "http://textures.minecraft.net/texture/1b6f1a25b6bc199946472aedb370522584ff6f4e83221e5946bd2e41b5ca13b");
+            SkullMeta headMeta = (SkullMeta) head.getItemMeta();
+            headMeta.setDisplayName(EpicSpawnersPlugin.getInstance().getLocale().getMessage("general.nametag.next"));
+            head.setItemMeta(headMeta);
 
-            ItemStack head2 = new ItemStack(Material.SKULL_ITEM, 1, (byte) 3);
-            ItemStack skull2 = head2;
-            if (!v1_7)
-                skull2 = Arconix.pl().getApi().getGUI().addTexture(head2, "http://textures.minecraft.net/texture/3ebf907494a935e955bfcadab81beafb90fb9be49c7026ba97d798d5f1a23");
-            SkullMeta skull2Meta = (SkullMeta) skull2.getItemMeta();
-            if (v1_7)
-                skull2Meta.setOwner("MHF_ArrowLeft");
-            skull2.setDurability((short) 3);
-            skull2Meta.setDisplayName(EpicSpawnersPlugin.getInstance().getLocale().getMessage("general.nametag.back"));
-            skull2.setItemMeta(skull2Meta);
+            ItemStack head2 = new ItemStack(Material.PLAYER_HEAD);
+            head2 = Arconix.pl().getApi().getGUI().addTexture(head2, "http://textures.minecraft.net/texture/3ebf907494a935e955bfcadab81beafb90fb9be49c7026ba97d798d5f1a23");
+            SkullMeta head2Meta = (SkullMeta) head2.getItemMeta();
+            head2Meta.setDisplayName(EpicSpawnersPlugin.getInstance().getLocale().getMessage("general.nametag.back"));
+            head2.setItemMeta(head2Meta);
 
             i.setItem(8, exit);
 
@@ -691,10 +668,10 @@ public class ESpawner implements Spawner {
             i.setItem(max22 - 3, Methods.getBackgroundGlass(false));
 
             if (page != 1) {
-                i.setItem(max22 - 8, skull2);
+                i.setItem(max22 - 8, head2);
             }
             if (page != max) {
-                i.setItem(max22 - 2, skull);
+                i.setItem(max22 - 2, head);
             }
 
             p.openInventory(i);
@@ -909,11 +886,7 @@ public class ESpawner implements Spawner {
         }
 
         if (instance.getConfig().getBoolean("Main.Sounds Enabled")) {
-            if (instance.isServerVersionAtLeast(ServerVersion.V1_9)) {
-                player.playSound(player.getLocation(), Sound.ENTITY_ARROW_HIT_PLAYER, 0.6F, 15.0F);
-            } else {
-                player.playSound(player.getLocation(), Sound.valueOf("ARROW_HIT"), 0.6F, 15.0F);
-            }
+        	player.playSound(player.getLocation(), Sound.ENTITY_ARROW_HIT_PLAYER, 0.6F, 15.0F);
         }
         ItemStack item = stack.getSpawnerData().toItemStack(1, stackSize);
 
@@ -922,10 +895,10 @@ public class ESpawner implements Spawner {
             player.getInventory().addItem(item);
         else if (!instance.getConfig().getBoolean("Main.Only Drop Placed Spawner") || placedBy != null) { //ToDo: Clean this up.
 
+        	ItemStack handItem = player.getInventory().getItemInMainHand();
             if (instance.getConfig().getBoolean("Spawner Drops.Drop On SilkTouch")
-                    && player.getItemInHand() != null
-                    && player.getItemInHand().hasItemMeta()
-                    && player.getItemInHand().getItemMeta().hasEnchant(Enchantment.SILK_TOUCH)
+                    && handItem != null && handItem.hasItemMeta()
+                    && handItem.getItemMeta().hasEnchant(Enchantment.SILK_TOUCH)
                     && player.hasPermission("epicspawners.silkdrop." + stack.getSpawnerData().getIdentifyingName())
                     || player.hasPermission("epicspawners.no-silk-drop")) {
 
@@ -1025,32 +998,31 @@ public class ESpawner implements Spawner {
             loc.setX(loc.getX() + .5);
             loc.setY(loc.getY() + .5);
             loc.setZ(loc.getZ() + .5);
-            if (EpicSpawnersPlugin.getInstance().isServerVersionAtLeast(ServerVersion.V1_9)) {
-                player.getWorld().spawnParticle(org.bukkit.Particle.valueOf(EpicSpawnersPlugin.getInstance().getConfig().getString("Main.Upgrade Particle Type")), loc, 100, .5, .5, .5);
-            } else {
-                player.getWorld().playEffect(loc, org.bukkit.Effect.valueOf(EpicSpawnersPlugin.getInstance().getConfig().getString("Main.Upgrade Particle Type")), 1, 0);
-                //Doesn't resolve... --Nova
-                //player.getWorld().spigot().playEffect(loc, org.bukkit.Effect.valueOf(EpicSpawners.getInstance().getConfig().getString("Main.Upgrade Particle Type")), 1, 0, (float) 1, (float) 1, (float) 1, 1, 100, 10);
-            }
+            player.getWorld().spawnParticle(Particle.valueOf(EpicSpawnersPlugin.getInstance().getConfig().getString("Main.Upgrade Particle Type")), loc, 100, 0.5, 0.5, 0.5);
 
             if (!EpicSpawnersPlugin.getInstance().getConfig().getBoolean("Main.Sounds Enabled")) {
                 return;
             }
             if (currentStackSize != EpicSpawnersPlugin.getInstance().getConfig().getInt("Main.Spawner Max Upgrade")) {
-                if (EpicSpawnersPlugin.getInstance().isServerVersionAtLeast(ServerVersion.V1_9)) {
-                    player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6F, 15.0F);
-                } else {
-                    player.playSound(player.getLocation(), Sound.valueOf("LEVEL_UP"), 2F, 15.0F);
-                }
+            	player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6F, 15.0F);
             } else {
-                if (EpicSpawnersPlugin.getInstance().isServerVersionAtLeast(ServerVersion.V1_12)) {
-                    player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 2F, 25.0F);
-                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_CHIME, 2F, 25.0F);
-                    Bukkit.getScheduler().scheduleSyncDelayedTask(EpicSpawnersPlugin.getInstance(), () -> player.playSound(player.getLocation(), Sound.BLOCK_NOTE_CHIME, 1.2F, 35.0F), 5L);
-                    Bukkit.getScheduler().scheduleSyncDelayedTask(EpicSpawnersPlugin.getInstance(), () -> player.playSound(player.getLocation(), Sound.BLOCK_NOTE_CHIME, 1.8F, 35.0F), 10L);
-                } else {
-                    player.playSound(player.getLocation(), Sound.valueOf("LEVEL_UP"), 2F, 25.0F);
-                }
+            	player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 2F, 25.0F);
+            	new BukkitRunnable() {
+
+            		private int count = 0;
+
+            		@Override
+            		public void run() {
+            			if (count == 0) player.playSound(player.getLocation(), Sound.BLOCK_NOTE_CHIME, 2F, 25.0F);
+            			else if (count == 1) player.playSound(player.getLocation(), Sound.BLOCK_NOTE_CHIME, 1.2F, 25.0F);
+            			else if (count == 2) {
+            				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_CHIME, 1.8F, 25.0F);
+            				this.cancel();
+            			}
+
+            			this.count++;
+            		};
+            	}.runTaskTimer(EpicSpawnersPlugin.getInstance(), 0, 5);
             }
             EpicSpawnersPlugin.getInstance().getHologramHandler().updateHologram(this);
         } catch (Exception e) {

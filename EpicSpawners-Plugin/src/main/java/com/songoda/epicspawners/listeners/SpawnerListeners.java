@@ -7,10 +7,8 @@ import com.songoda.epicspawners.spawners.object.ESpawner;
 import com.songoda.epicspawners.spawners.object.ESpawnerStack;
 import com.songoda.epicspawners.utils.Debugger;
 import com.songoda.epicspawners.utils.Methods;
-import com.songoda.epicspawners.utils.ServerVersion;
 
 import org.bukkit.Location;
-import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -45,14 +43,8 @@ public class SpawnerListeners implements Listener {
             Spawner spawner = instance.getSpawnerManager().getSpawnerFromWorld(e.getSpawner().getLocation());
 
             // Remove entity so we can do our own method.
+            e.getEntity().getPassengers().forEach(Entity::remove);
             e.getEntity().remove();
-
-            if (instance.isServerVersionAtLeast(ServerVersion.V1_9)) {
-                for (Entity ee : e.getEntity().getPassengers()) {
-                    ee.remove();
-                }
-            }
-
             spawner.spawn(); */
         } catch (Exception ex) {
             Debugger.runReport(ex);

@@ -1,14 +1,10 @@
 package com.songoda.epicspawners.utils;
 
+@Deprecated // No longer needed due to 1.13+ support. May be needed in future. - Choco
 public enum ServerVersion {
 
     UNKNOWN("unknown_server_version"),
-    V1_7("org.bukkit.craftbukkit.v1_7"),
-    V1_8("org.bukkit.craftbukkit.v1_8"),
-    V1_9("org.bukkit.craftbukkit.v1_9"),
-    V1_10("org.bukkit.craftbukkit.v1_10"),
-    V1_11("org.bukkit.craftbukkit.v1_11"),
-    V1_12("org.bukkit.craftbukkit.v1_12");
+    V1_13("org.bukkit.craftbukkit.v1_13");
 
 
     private final String packagePrefix;

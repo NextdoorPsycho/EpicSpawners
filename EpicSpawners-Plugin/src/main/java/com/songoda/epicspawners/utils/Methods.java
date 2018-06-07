@@ -2,6 +2,8 @@ package com.songoda.epicspawners.utils;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 
 import com.songoda.arconix.api.methods.formatting.TextComponent;
 import com.songoda.arconix.plugin.Arconix;
@@ -13,6 +15,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -28,24 +31,26 @@ import org.bukkit.inventory.ItemStack;
 @SuppressWarnings("deprecation")
 public class Methods {
 
+    private static final Set<Material> STAINED_GLASS = EnumSet.of(
+            Material.BLACK_STAINED_GLASS_PANE, Material.BLUE_STAINED_GLASS_PANE,
+            Material.BROWN_STAINED_GLASS_PANE, Material.CYAN_STAINED_GLASS_PANE,
+            Material.GRAY_STAINED_GLASS, Material.GREEN_STAINED_GLASS_PANE,
+            Material.LIGHT_BLUE_STAINED_GLASS_PANE, Material.LIGHT_GRAY_STAINED_GLASS_PANE,
+            Material.LIME_STAINED_GLASS_PANE, Material.MAGENTA_STAINED_GLASS_PANE,
+            Material.ORANGE_STAINED_GLASS_PANE, Material.PINK_STAINED_GLASS_PANE,
+            Material.PURPLE_STAINED_GLASS_PANE, Material.RED_STAINED_GLASS_PANE,
+            Material.WHITE_STAINED_GLASS_PANE, Material.YELLOW_STAINED_GLASS_PANE
+    );
+
     public static void takeItem(Player player, int amount) {
         if (player.getGameMode() == GameMode.CREATIVE) return;
 
-        ItemStack item = player.getInventory().getItemInHand();
+        ItemStack item = player.getInventory().getItemInMainHand();
         if (item == null) return;
 
         int result = item.getAmount() - amount;
         item.setAmount(result);
-
-        player.setItemInHand(result > 0 ? item : null);
-    }
-
-    public static boolean isOffhand(PlayerInteractEvent event) {
-        return EpicSpawnersPlugin.getInstance().isServerVersionAtLeast(ServerVersion.V1_9) && event.getHand() == EquipmentSlot.OFF_HAND;
-    }
-
-    public static boolean isOffhand(BlockPlaceEvent event) {
-        return EpicSpawnersPlugin.getInstance().isServerVersionAtLeast(ServerVersion.V1_9) && event.getHand() == EquipmentSlot.OFF_HAND;
+        player.getInventory().setItemInMainHand(result > 0 ? item : null);
     }
 
     public static String getBoostCost(int time, int amount) {
@@ -138,23 +143,20 @@ public class Methods {
     }
 
     public static boolean isAir(Material type) {
-        return type == Material.AIR || type == Material.WOOD_PLATE || type == Material.STONE_PLATE
-            || type == Material.IRON_PLATE || type == Material.GOLD_PLATE;
+        return type == Material.AIR || Tag.WOODEN_PRESSURE_PLATES.isTagged(type)
+            || type == Material.LIGHT_WEIGHTED_PRESSURE_PLATE || type == Material.HEAVY_WEIGHTED_PRESSURE_PLATE;
     }
 
-
-    public static Collection<Entity> getNearbyEntities(Location location, double x, double y, double z) {
-        return !EpicSpawnersPlugin.getInstance().isServerVersion(ServerVersion.V1_7)
-                ? location.getWorld().getNearbyEntities(location, x, y, z)
-                : Collections.emptyList();
+    public static boolean isStainedGlassPane(Material type) { // No vanilla Tag for this -,-
+    	return STAINED_GLASS.contains(type);
     }
 
-    public static int countEntitiesAroundLoation(Location location) {
+    public static int countEntitiesAroundLocation(Location location) {
         try {
             int amt = 0;
 
             String[] arr = EpicSpawnersPlugin.getInstance().getConfig().getString("Main.Radius To Search Around Spawners").split("x");
-            Collection<Entity> nearbyEntite = getNearbyEntities(location.clone().add(0.5, 0.5, 0.5), Integer.parseInt(arr[0]), Integer.parseInt(arr[1]), Integer.parseInt(arr[2]));
+            Collection<Entity> nearbyEntite = location.getWorld().getNearbyEntities(location.clone().add(0.5, 0.5, 0.5), Integer.parseInt(arr[0]), Integer.parseInt(arr[1]), Integer.parseInt(arr[2]));
             if (nearbyEntite.size() < 1) return amt;
 
             for (Entity ee : nearbyEntite) {

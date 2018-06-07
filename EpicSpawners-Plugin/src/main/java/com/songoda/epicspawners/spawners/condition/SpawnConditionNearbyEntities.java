@@ -32,7 +32,7 @@ public class SpawnConditionNearbyEntities implements SpawnCondition {
     public boolean isMet(Spawner spawner) {
         Location location = spawner.getLocation().add(0.5, 0.5, 0.5);
 
-        int amt = Methods.countEntitiesAroundLoation(location);
+        int amt = Methods.countEntitiesAroundLocation(location);
 
         return amt < max;
     }

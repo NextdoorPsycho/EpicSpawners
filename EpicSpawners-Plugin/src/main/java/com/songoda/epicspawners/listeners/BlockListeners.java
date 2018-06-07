@@ -59,8 +59,7 @@ public class BlockListeners implements Listener {
                     Block b2 = block.getWorld().getBlockAt(bx + fx, by + fy, bz + fz);
 
                     if (from) {
-                        if ((b2.getType().equals(Material.STATIONARY_LAVA) || b2.getType().equals(Material.LAVA))
-                                || (b2.getType().equals(Material.STATIONARY_WATER) || b2.getType().equals(Material.WATER))) {
+                        if (b2.getType() == Material.LAVA || b2.getType() == Material.WATER) {
                             b2.setType(Material.AIR);
                         }
                     } else {

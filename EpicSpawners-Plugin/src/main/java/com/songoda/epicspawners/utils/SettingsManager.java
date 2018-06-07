@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -16,6 +17,7 @@ import com.songoda.epicspawners.EpicSpawnersPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -63,14 +65,14 @@ public class SettingsManager implements Listener {
 
         if (event.getInventory().getTitle().equals(pluginName + " Settings Manager")) {
             event.setCancelled(true);
-            if (clickedItem.getType() == Material.STAINED_GLASS_PANE) return;
+            if (Methods.isStainedGlassPane(clickedItem.getType())) return;
 
             String type = ChatColor.stripColor(clickedItem.getItemMeta().getDisplayName());
             this.cat.put((Player) event.getWhoClicked(), type);
             this.openEditor((Player) event.getWhoClicked());
         } else if (event.getInventory().getTitle().equals(pluginName + " Settings Editor")) {
             event.setCancelled(true);
-            if (clickedItem.getType() == Material.STAINED_GLASS_PANE) return;
+            if (Methods.isStainedGlassPane(clickedItem.getType())) return;
 
             Player player = (Player) event.getWhoClicked();
 
@@ -131,14 +133,16 @@ public class SettingsManager implements Listener {
         }
 
         int slot = 10;
+        Iterator<Material> wool = Tag.WOOL.getValues().iterator();
         for (String key : plugin.getConfig().getDefaultSection().getKeys(false)) {
-            ItemStack item = new ItemStack(Material.WOOL, 1, (byte) (slot - 9));
+        	if (!wool.hasNext()) break;
+
+            ItemStack item = new ItemStack(wool.next());
             ItemMeta meta = item.getItemMeta();
             meta.setLore(Collections.singletonList(TextComponent.formatText("&6Click To Edit This Category.")));
             meta.setDisplayName(TextComponent.formatText("&f&l" + key));
             item.setItemMeta(meta);
-            inventory.setItem(slot, item);
-            slot++;
+            inventory.setItem(slot++, item);
         }
 
         player.openInventory(inventory);
@@ -163,7 +167,7 @@ public class SettingsManager implements Listener {
                 item.setType(Material.PAPER);
                 lore.add(TextComponent.formatText("&9" + config.getString(fKey)));
             } else if (config.isInt(fKey)) {
-                item.setType(Material.WATCH);
+                item.setType(Material.CLOCK);
                 lore.add(TextComponent.formatText("&5" + config.getInt(fKey)));
             }
 
@@ -194,8 +198,6 @@ public class SettingsManager implements Listener {
             if (config.contains("settings." + setting.oldSetting)) {
                 config.addDefault(setting.setting, plugin.getConfig().get("settings." + setting.oldSetting));
                 config.set("settings." + setting.oldSetting, null);
-            } else if (setting.setting.equals("Main.Upgrade Particle Type")) {
-                config.addDefault(setting.setting, plugin.isServerVersion(ServerVersion.V1_7, ServerVersion.V1_8) ? "WITCH_MAGIC" : setting.option);
             } else {
                 config.addDefault(setting.setting, setting.option);
             }

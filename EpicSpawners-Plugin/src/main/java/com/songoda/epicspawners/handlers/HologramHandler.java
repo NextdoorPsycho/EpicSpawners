@@ -5,7 +5,6 @@ import com.songoda.epicspawners.EpicSpawnersPlugin;
 import com.songoda.epicspawners.api.spawner.Spawner;
 import com.songoda.epicspawners.utils.Debugger;
 import com.songoda.epicspawners.utils.Methods;
-import com.songoda.epicspawners.utils.ServerVersion;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -31,9 +30,6 @@ public class HologramHandler {
 
     public void loadHolograms() {
         if (instance.getConfig().getBoolean("Main.Spawners Have Holograms")) {
-
-            if (instance.isServerVersion(ServerVersion.V1_7)) return;
-
             Collection<Spawner> spawners = instance.getSpawnerManager().getSpawners();
             if (spawners.size() == 0) return;
 
@@ -52,7 +48,7 @@ public class HologramHandler {
             Block b = olocation.getBlock();
             if (b.getType() != Material.MOB_SPAWNER) return;
             String face = null;
-            Collection<Entity> nearbyEntites = Methods.getNearbyEntities(olocation, 5, 5, 5);
+            Collection<Entity> nearbyEntites = olocation.getWorld().getNearbyEntities(olocation, 5, 5, 5);
             for (Entity entity : nearbyEntites) {
                 if (entity instanceof Player) {
                     face = Arconix.pl().getApi().getPlayer((Player) entity).getPlayerDirection();
@@ -153,27 +149,25 @@ public class HologramHandler {
 
     public void processChange(Block b) {
         try {
-            if (instance.isServerVersionAtLeast(ServerVersion.V1_8)) {
-                Block spawner = null;
-                if (b.getType() == Material.MOB_SPAWNER) {
-                    spawner = b;
-                } else if (b.getRelative(BlockFace.UP).getType() == Material.MOB_SPAWNER) {
-                    spawner = b.getRelative(BlockFace.UP);
-                } else if (b.getRelative(BlockFace.DOWN).getType() == Material.MOB_SPAWNER) {
-                    spawner = b.getRelative(BlockFace.DOWN);
-                } else if (b.getRelative(BlockFace.NORTH).getType() == Material.MOB_SPAWNER) {
-                    spawner = b.getRelative(BlockFace.NORTH);
-                } else if (b.getRelative(BlockFace.SOUTH).getType() == Material.MOB_SPAWNER) {
-                    spawner = b.getRelative(BlockFace.SOUTH);
-                } else if (b.getRelative(BlockFace.WEST).getType() == Material.MOB_SPAWNER) {
-                    spawner = b.getRelative(BlockFace.WEST);
-                } else if (b.getRelative(BlockFace.EAST).getType() == Material.MOB_SPAWNER) {
-                    spawner = b.getRelative(BlockFace.EAST);
-                }
-                if (spawner != null) {
-                    Spawner block = instance.getSpawnerManager().getSpawnerFromWorld(spawner.getLocation());
-                    Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(instance, () -> instance.getHologramHandler().updateHologram(block), 1L);
-                }
+            Block spawner = null;
+            if (b.getType() == Material.MOB_SPAWNER) {
+                spawner = b;
+            } else if (b.getRelative(BlockFace.UP).getType() == Material.MOB_SPAWNER) {
+                spawner = b.getRelative(BlockFace.UP);
+            } else if (b.getRelative(BlockFace.DOWN).getType() == Material.MOB_SPAWNER) {
+                spawner = b.getRelative(BlockFace.DOWN);
+            } else if (b.getRelative(BlockFace.NORTH).getType() == Material.MOB_SPAWNER) {
+                spawner = b.getRelative(BlockFace.NORTH);
+            } else if (b.getRelative(BlockFace.SOUTH).getType() == Material.MOB_SPAWNER) {
+                spawner = b.getRelative(BlockFace.SOUTH);
+            } else if (b.getRelative(BlockFace.WEST).getType() == Material.MOB_SPAWNER) {
+                spawner = b.getRelative(BlockFace.WEST);
+            } else if (b.getRelative(BlockFace.EAST).getType() == Material.MOB_SPAWNER) {
+                spawner = b.getRelative(BlockFace.EAST);
+            }
+            if (spawner != null) {
+                Spawner block = instance.getSpawnerManager().getSpawnerFromWorld(spawner.getLocation());
+                Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(instance, () -> instance.getHologramHandler().updateHologram(block), 1L);
             }
         } catch (Exception e) {
             Debugger.runReport(e);

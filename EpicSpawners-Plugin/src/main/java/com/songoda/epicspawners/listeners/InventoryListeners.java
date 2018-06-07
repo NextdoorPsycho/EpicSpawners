@@ -113,7 +113,7 @@ public class InventoryListeners implements Listener {
                         }
                     } else if (event.getCurrentItem().getItemMeta().getDisplayName().equals(instance.getLocale().getMessage("general.nametag.next"))) {
                         spawner.convertOverview(player, page + 1);
-                    } else if (clicked.getType() == Material.SKULL_ITEM || clicked.getType() == Material.MOB_SPAWNER) {
+                    } else if (clicked.getType() == Material.PLAYER_HEAD || clicked.getType() == Material.MOB_SPAWNER) {
                         spawner.convert(instance.getSpawnerDataFromItem(clicked), player);
                     }
                 }
@@ -165,8 +165,8 @@ public class InventoryListeners implements Listener {
                     else if (event.getSlot() == 11) {
                         if (!event.getClick().isLeftClick() && !event.getClick().isRightClick()) {
                             SpawnerData spawnerData = instance.getSpawnerEditor().getType(editingData.getSpawnerSlot());
-                            spawnerData.setDisplayItem(Material.valueOf(player.getItemInHand().getType().toString()));
-                            player.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&7Display Item for &6" + spawnerData.getIdentifyingName() + " &7set to &6" + player.getItemInHand().getType().toString() + "&7."));
+                            spawnerData.setDisplayItem(player.getInventory().getItemInMainHand().getType());
+                            player.sendMessage(TextComponent.formatText(instance.references.getPrefix() + "&7Display Item for &6" + spawnerData.getIdentifyingName() + " &7set to &6" + spawnerData.getDisplayItem() + "&7."));
                             instance.getSpawnerEditor().overview(player, editingData.getSpawnerSlot());
                         } else if (event.getClick().isLeftClick()) {
                             instance.getSpawnerEditor().editSpawnerName(player);
@@ -357,7 +357,7 @@ public class InventoryListeners implements Listener {
                     }
                 } else if (event.getCurrentItem().getItemMeta().getDisplayName().equals(instance.getLocale().getMessage("general.nametag.next"))) {
                     instance.getSpawnerEditor().openSpawnerSelector(player, page + 1);
-                } else if (event.getCurrentItem().getType() != Material.STAINED_GLASS_PANE) {
+                } else if (!Methods.isStainedGlassPane(event.getCurrentItem().getType())) {
                     String idd = event.getCurrentItem().getItemMeta().getLore().get(1);
                     idd = idd.replace("§", "");
                     int id = Integer.parseInt(idd);

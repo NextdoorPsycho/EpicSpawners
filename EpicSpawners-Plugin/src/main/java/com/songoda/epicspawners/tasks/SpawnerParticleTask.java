@@ -1,7 +1,5 @@
 package com.songoda.epicspawners.tasks;
 
-import com.songoda.arconix.api.packets.Particle;
-import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicspawners.EpicSpawnersPlugin;
 import com.songoda.epicspawners.api.particles.ParticleDensity;
 import com.songoda.epicspawners.api.particles.ParticleEffect;
@@ -11,6 +9,7 @@ import com.songoda.epicspawners.api.spawner.SpawnerData;
 import com.songoda.epicspawners.api.spawner.SpawnerManager;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class SpawnerParticleTask extends BukkitRunnable {
@@ -23,11 +22,9 @@ public class SpawnerParticleTask extends BukkitRunnable {
     private double theta = 0;
 
     private final SpawnerManager manager;
-    private final Particle particleManager;
 
     private SpawnerParticleTask(EpicSpawnersPlugin plugin) {
         this.manager = plugin.getSpawnerManager();
-        this.particleManager = Arconix.pl().getApi().packetLibrary.getParticleManager();
     }
 
     @Override
@@ -54,9 +51,11 @@ public class SpawnerParticleTask extends BukkitRunnable {
                 double z = HALO_RADIUS * Math.sin(theta);
 
                 centre.add(x, 0.2, z);
-                this.particleManager.broadcastParticle(centre, 0, 0, 0, 0, particle.getEffect(), density.getEffect());
+
+                centre.getWorld().spawnParticle(particle.getEffect(), centre, density.getEffect(), 0, 0, 0, 0);
             }
             else if (effect == ParticleEffect.TARGET) {
+            	World world = centre.getWorld();
                 for (int i = 0; i < 360; i += 10) {
                     double angle = Math.toRadians(i);
                     double cosAngle = Math.cos(angle), sinAngle = Math.sin(angle);
@@ -64,14 +63,14 @@ public class SpawnerParticleTask extends BukkitRunnable {
                     // Outer circle
                     double x = 1.2 * cosAngle, z = 1.2 * sinAngle;
                     centre.add(x, -0.2, z);
-                    this.particleManager.broadcastParticle(centre, 0, 0, 0, 0, particle.getEffect(), density.getEffect() - 2);
+                    world.spawnParticle(particle.getEffect(), centre, density.getEffect(), 0, 0, 0, 0);
                     centre.subtract(x, -0.2, z);
 
                     // Inner circle
                     x = 0.8 * cosAngle;
                     z = 0.8 * sinAngle;
                     centre.add(x, 0, z);
-                    this.particleManager.broadcastParticle(centre, 0, 0, 0, 0, particle.getEffect(), density.getEffect() - 2);
+                    world.spawnParticle(particle.getEffect(), centre, density.getEffect(), 0, 0, 0, 0);
                     centre.subtract(x, 0, z);
                 }
             }

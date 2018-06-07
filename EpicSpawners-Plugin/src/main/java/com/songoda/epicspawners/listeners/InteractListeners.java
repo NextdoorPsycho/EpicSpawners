@@ -24,7 +24,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.material.SpawnEgg;
 
 /**
@@ -74,6 +76,7 @@ public class InteractListeners implements Listener {
                 }
             }
 
+            // TODO: Figure out a good way to work with monster eggs... - Choco
             if (e.getClickedBlock().getType() == Material.MOB_SPAWNER && is == Material.MONSTER_EGG && EpicSpawnersPlugin.getInstance().getBlacklistHandler().isBlacklisted(p, true))
                 e.setCancelled(true);
             if (!(e.getClickedBlock().getType() == Material.MOB_SPAWNER && is == Material.MONSTER_EGG && !EpicSpawnersPlugin.getInstance().getBlacklistHandler().isBlacklisted(p, true))) {
@@ -91,18 +94,14 @@ public class InteractListeners implements Listener {
             }
 
             int bmulti = spawner.getSpawnerDataCount();
-            int amt = p.getInventory().getItemInHand().getAmount();
+            int amt = p.getInventory().getItemInMainHand().getAmount();
             EntityType itype;
 
-            if (EpicSpawnersPlugin.getInstance().isServerVersion(ServerVersion.V1_7, ServerVersion.V1_8))
-                itype = ((SpawnEgg) i.getData()).getSpawnedType();
-            else {
-                String str = Reflection.getNBTTagCompound(Reflection.getNMSItemStack(i)).toString();
-                if (str.contains("minecraft:"))
-                    itype = EntityType.fromName(str.substring(str.indexOf("minecraft:") + 10, str.indexOf("\"}")));
-                else
-                    itype = EntityType.fromName(str.substring(str.indexOf("EntityTag:{id:") + 15, str.indexOf("\"}")));
-            }
+            String str = Reflection.getNBTTagCompound(Reflection.getNMSItemStack(i)).toString();
+            if (str.contains("minecraft:"))
+                itype = EntityType.fromName(str.substring(str.indexOf("minecraft:") + 10, str.indexOf("\"}")));
+            else
+                itype = EntityType.fromName(str.substring(str.indexOf("EntityTag:{id:") + 15, str.indexOf("\"}")));
 
             SpawnerData itemType = instance.getSpawnerManager().getSpawnerData(itype);
 
@@ -137,7 +136,7 @@ public class InteractListeners implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void PlayerInteractEvent(PlayerInteractEvent e) {
         try {
-            if (Methods.isOffhand(e)) return;
+            if (e.getHand() == EquipmentSlot.OFF_HAND) return;
 
             Player player = e.getPlayer();
             Block block = e.getClickedBlock();

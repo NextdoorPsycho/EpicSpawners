@@ -10,7 +10,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicspawners.EpicSpawnersPlugin;
 import com.songoda.epicspawners.api.spawner.Spawner;
 import com.songoda.epicspawners.api.spawner.SpawnerData;
@@ -20,9 +19,7 @@ import com.songoda.epicspawners.spawners.condition.SpawnConditionNearbyEntities;
 import com.songoda.epicspawners.spawners.object.SpawnOptionType;
 import com.songoda.epicspawners.utils.Debugger;
 import com.songoda.epicspawners.utils.Methods;
-import com.songoda.epicspawners.utils.ServerVersion;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -66,11 +63,7 @@ public class SpawnOptionEntity implements SpawnOption {
 
         if (nmsSpawnMethod == null) {
             try {
-                if (instance.isServerVersionAtLeast(ServerVersion.V1_11)) {
-                    nmsSpawnMethod = world.getClass().getMethod("spawn", Location.class, Class.class, Consumer.class, CreatureSpawnEvent.SpawnReason.class);
-                } else {
-                    nmsSpawnMethod = world.getClass().getMethod("spawn", Location.class, Class.class, CreatureSpawnEvent.SpawnReason.class);
-                }
+                nmsSpawnMethod = world.getClass().getMethod("spawn", Location.class, Class.class, Consumer.class, CreatureSpawnEvent.SpawnReason.class);
             } catch (ReflectiveOperationException e) {
                 e.printStackTrace();
                 return;
@@ -105,7 +98,7 @@ public class SpawnOptionEntity implements SpawnOption {
         }
 
         int spawnerBoost = spawner.getBoost();
-        int amtOfCurrentEntities = Methods.countEntitiesAroundLoation(location);
+        int amtOfCurrentEntities = Methods.countEntitiesAroundLocation(location);
         if (amtOfCurrentEntities == limit && spawnerBoost == 0) return;
         spawnCount = Math.min(limit - amtOfCurrentEntities, spawnCount) + spawner.getBoost();
 
@@ -156,7 +149,7 @@ public class SpawnOptionEntity implements SpawnOption {
                 float z = (float) (0 + (Math.random() * 1));
 
                 //ToDo: Make this work for all spawn types
-                Arconix.pl().getApi().packetLibrary.getParticleManager().broadcastParticle(spot, x, y, z, 0, data.getEntitySpawnParticle().getEffect(), data.getParticleDensity().getEntitySpawn());
+                spot.getWorld().spawnParticle(data.getEntitySpawnParticle().getEffect(), spot, data.getParticleDensity().getEffect(), x, y, z, 0);
 
                 Location loc = spot.clone();
                 loc.subtract(0, 1, 0);
@@ -180,7 +173,7 @@ public class SpawnOptionEntity implements SpawnOption {
         try {
             List<Material> spawnBlocks = Arrays.asList(data.getSpawnBlocks());
 
-            if (!Methods.isAir(location.getBlock().getType()) && (!isWater(location.getBlock().getType()) && !spawnBlocks.contains("WATER"))) {
+            if (!Methods.isAir(location.getBlock().getType()) && (location.getBlock().getType() != Material.WATER && !spawnBlocks.contains(Material.WATER))) {
                 canSpawn = false;
             }
 
@@ -188,7 +181,7 @@ public class SpawnOptionEntity implements SpawnOption {
             if (canSpawn) {
                 for (Material material : spawnBlocks) {
                     Location loc = location.clone().subtract(0, 1, 0);
-                    if (loc.getBlock().getType().toString().equalsIgnoreCase(material.name()) || isWater(loc.getBlock().getType()) && spawnBlocks.contains("WATER")) {
+                    if (loc.getBlock().getType().toString().equalsIgnoreCase(material.name()) || loc.getBlock().getType() == Material.WATER && spawnBlocks.contains(Material.WATER)) {
                         canSpawnUnder = true;
                     }
                 }
@@ -200,28 +193,11 @@ public class SpawnOptionEntity implements SpawnOption {
         return canSpawn;
     }
 
-    public boolean isWater(Material type) {
-        try {
-            if (type == Material.WATER || type == Material.STATIONARY_WATER) {
-                return true;
-            }
-
-        } catch (Exception e) {
-            Debugger.runReport(e);
-        }
-        return false;
-    }
-
     private boolean spawnFinal(Location location, SpawnerData data, EntityType type) {
         World world = location.getWorld();
 
         try {
-            Entity entity;
-
-            if (instance.isServerVersionAtLeast(ServerVersion.V1_11))
-                entity = (Entity) nmsSpawnMethod.invoke(world, location, type.getEntityClass(), null, CreatureSpawnEvent.SpawnReason.SPAWNER); //ToDo: account for all mobs in the spawner.
-            else
-                entity = (Entity) nmsSpawnMethod.invoke(world, location, type.getEntityClass(), CreatureSpawnEvent.SpawnReason.SPAWNER);
+            Entity entity = (Entity) nmsSpawnMethod.invoke(world, location, type.getEntityClass(), null, CreatureSpawnEvent.SpawnReason.SPAWNER); //ToDo: account for all mobs in the spawner.
 
             if (data.isSpawnOnFire()) {
                 entity.setFireTicks(160);
