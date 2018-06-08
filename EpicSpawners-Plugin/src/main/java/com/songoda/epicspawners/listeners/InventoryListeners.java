@@ -118,40 +118,6 @@ public class InventoryListeners implements Listener {
                     }
                 }
             } else if (instance.getPlayerActionManager().getPlayerAction(player).getInMenu() == MenuType.OVERVIEW) {
-                event.setCancelled(true);
-                PlayerData playerData = instance.getPlayerActionManager().getPlayerAction(player);
-                ESpawner spawner = playerData.getLastSpawner();
-                if (spawner.getFirstStack().getSpawnerData().isUpgradeable()) {
-                    if (event.getSlot() == 11) {
-                        if (instance.getConfig().getBoolean("Main.Upgrade With XP")) {
-                            if (event.getCurrentItem().getItemMeta().getDisplayName() != "§l") {
-                                spawner.upgrade(player, CostType.EXPERIENCE);
-                            }
-                            player.closeInventory();
-                        }
-                    } else if (event.getSlot() == 8) {
-                        int page = playerData.getInfoPage() + 1;
-                        playerData.setInfoPage(page);
-                        spawner.overview(player, page);
-                    } else if (event.getSlot() == 13) {
-                        if (event.getClick().isRightClick()) {
-                            if (spawner.getBoost() == 0) {
-                                spawner.playerBoost(player);
-                            }
-                        } else if (event.getClick().isLeftClick()) {
-                            if (player.hasPermission("epicspawners.convert") && spawner.getSpawnerStacks().size() == 1) {
-                                spawner.convertOverview(player, 1);
-                            }
-                        }
-                    } else if (event.getSlot() == 15) {
-                        if (instance.getConfig().getBoolean("Main.Upgrade With Economy")) {
-                            if (!event.getCurrentItem().getItemMeta().getDisplayName().equals("§l")) {
-                                spawner.upgrade(player, CostType.ECONOMY);
-                                player.closeInventory();
-                            }
-                        }
-                    }
-                }
             } else if (instance.getSpawnerEditor().getEditingData(player).getMenu() != EditingMenu.NOT_IN) {
 
                 if (event.getRawSlot() >= event.getView().getTopInventory().getSize()) return;
