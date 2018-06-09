@@ -1,8 +1,15 @@
 package com.songoda.epicspawners.gui;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.songoda.arconix.api.methods.formatting.TextComponent;
 import com.songoda.arconix.api.methods.formatting.TimeComponent;
 import com.songoda.epicspawners.EpicSpawnersPlugin;
+import com.songoda.epicspawners.Locale;
 import com.songoda.epicspawners.api.CostType;
 import com.songoda.epicspawners.api.spawner.SpawnerData;
 import com.songoda.epicspawners.api.spawner.SpawnerStack;
@@ -10,175 +17,179 @@ import com.songoda.epicspawners.spawners.object.ESpawner;
 import com.songoda.epicspawners.utils.Debugger;
 import com.songoda.epicspawners.utils.Methods;
 import com.songoda.epicspawners.utils.gui.AbstractGUI;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public class GUISpawnerOverview extends AbstractGUI {
+
+    private static final Pattern REGEX = Pattern.compile("(.{1,28}(?:\\s|$))|(.{0,28})", Pattern.DOTALL);
+
+    private static final ItemStack GLASS = Methods.getGlass();
+    private static final ItemStack BACKGROUND_GLASS_TYPE_2 = Methods.getBackgroundGlass(true);
+    private static final ItemStack BACKGROUND_GLASS_TYPE_3 = Methods.getBackgroundGlass(false);
 
     private final ESpawner spawner;
     private final Player player;
-    private final EpicSpawnersPlugin instance;
+    private final EpicSpawnersPlugin plugin;
+
+    private final FileConfiguration config;
+    private final Locale locale;
 
     private int infoPage = 1;
 
-    public GUISpawnerOverview(EpicSpawnersPlugin instance, ESpawner spawner, Player player) {
+    public GUISpawnerOverview(EpicSpawnersPlugin plugin, ESpawner spawner, Player player) {
         super(27, TextComponent.formatTitle(Methods.compileName(spawner.getIdentifyingName(), spawner.getSpawnerDataCount(), false)));
         this.spawner = spawner;
         this.player = player;
-        this.instance = instance;
+        this.plugin = plugin;
+
+        this.config = plugin.getConfig();
+        this.locale = plugin.getLocale();
     }
 
     @Override
     protected void initInventoryItems(Inventory inventory) {
-        SpawnerData spawnerData = spawner.getFirstStack().getSpawnerData();
+        Collection<SpawnerStack> spawnerStacks = spawner.getSpawnerStacks();
+        SpawnerStack firstStack = spawner.getFirstStack();
+        SpawnerData firstData = firstStack.getSpawnerData();
 
         int showAmt = spawner.getSpawnerDataCount();
-        if (showAmt > 64 || showAmt == 0)
+        if (showAmt > 64 || showAmt == 0) {
             showAmt = 1;
+        }
 
-        int stackAmount = spawner.getSpawnerStacks().size();
-
+        int stackAmount = spawnerStacks.size();
         ItemStack item = new ItemStack(Material.SKULL_ITEM, showAmt, (byte) 3);
         if (stackAmount != 1) {
-            item = EpicSpawnersPlugin.getInstance().getHeads().addTexture(item, instance.getSpawnerManager().getSpawnerData("omni"));
+            item = plugin.getHeads().addTexture(item, plugin.getSpawnerManager().getSpawnerData("omni"));
         } else {
             try {
-                item = EpicSpawnersPlugin.getInstance().getHeads().addTexture(item, spawnerData);
+                item = plugin.getHeads().addTexture(item, firstData);
             } catch (Exception e) {
                 item = new ItemStack(Material.MOB_SPAWNER, showAmt);
             }
         }
 
-        if (stackAmount == 1 && spawner.getFirstStack().getSpawnerData().getDisplayItem() != null) {
-            item.setType(spawner.getFirstStack().getSpawnerData().getDisplayItem());
+        if (stackAmount == 1 && firstData.getDisplayItem() != null) {
+            item.setType(firstData.getDisplayItem());
         }
 
         ItemMeta itemmeta = item.getItemMeta();
-        itemmeta.setDisplayName(instance.getLocale().getMessage("interface.spawner.statstitle"));
-        ArrayList<String> lore = new ArrayList<>();
+        itemmeta.setDisplayName(locale.getMessage("interface.spawner.statstitle"));
+        List<String> lore = new ArrayList<>();
 
         if (stackAmount != 1) {
-            StringBuilder only = new StringBuilder("&6" + Methods.compileName(spawner.getFirstStack().getSpawnerData().getIdentifyingName(), spawner.getFirstStack().getStackSize(), false));
+            StringBuilder only = new StringBuilder("&6" + Methods.compileName(firstData.getIdentifyingName(), firstStack.getStackSize(), false));
 
-            int num = 1;
-            for (SpawnerStack stack : spawner.getSpawnerStacks()) {
-                if (num != 1)
-                    only.append("&8, &6").append(Methods.compileName(stack.getSpawnerData().getIdentifyingName(), stack.getStackSize(), false));
-                num++;
+            int index = 1;
+            for (SpawnerStack stack : spawnerStacks) {
+                if (index++ == 1) continue; // Ignore first stack
+                only.append("&8, &6").append(Methods.compileName(stack.getSpawnerData().getIdentifyingName(), stack.getStackSize(), false));
             }
 
             lore.add(TextComponent.formatText(only.toString()));
         }
 
-        List<Material> blocks = spawner.getFirstStack().getSpawnerData().getSpawnBlocksList();
-
-        StringBuilder only = new StringBuilder(blocks.get(0).name());
-
-        int num = 1;
-        for (Material block : blocks) {
-            if (num != 1)
-                only.append("&8, &6").append(Methods.getTypeFromString(block.name()));
-            num++;
+        StringBuilder only = new StringBuilder();
+        for (Material block : firstData.getSpawnBlocksList()) {
+            only.append("&8, &6").append(Methods.getTypeFromString(block.name()));
         }
 
-        lore.add(instance.getLocale().getMessage("interface.spawner.onlyspawnson", only.toString()));
+        lore.add(locale.getMessage("interface.spawner.onlyspawnson", only.toString()));
+        lore.add(locale.getMessage("interface.spawner.stats", spawner.getSpawnCount()));
 
-        lore.add(instance.getLocale().getMessage("interface.spawner.stats", spawner.getSpawnCount()));
-        if (player.hasPermission("epicspawners.convert") && spawner.getSpawnerStacks().size() == 1) {
+        if (player.hasPermission("epicspawners.convert") && spawnerStacks.size() == 1) {
             lore.add("");
-            lore.add(instance.getLocale().getMessage("interface.spawner.convert"));
+            lore.add(locale.getMessage("interface.spawner.convert"));
         }
-        if (player.hasPermission("epicspawners.canboost")) {
-            if (spawner.getBoost() == 0) {
-                if (!player.hasPermission("epicspawners.convert") || spawner.getSpawnerStacks().size() != 1) {
-                    lore.add("");
-                }
-                lore.add(instance.getLocale().getMessage("interface.spawner.boost"));
-            }
-        }
-        if (spawner.getBoost() != 0) {
 
+        if (player.hasPermission("epicspawners.canboost") && spawner.getBoost() == 0) {
+            if (!player.hasPermission("epicspawners.convert") || spawnerStacks.size() != 1) {
+                lore.add("");
+            }
+
+            lore.add(locale.getMessage("interface.spawner.boost"));
+        }
+
+        if (spawner.getBoost() != 0) {
             // ToDo: Make it display all boosts.
-            String[] parts = instance.getLocale().getMessage("interface.spawner.boostedstats", Integer.toString(spawner.getBoost()), spawnerData.getIdentifyingName(), TimeComponent.makeReadable(spawner.getBoostEnd().toEpochMilli() - System.currentTimeMillis())).split("\\|");
+            String[] parts = locale.getMessage("interface.spawner.boostedstats", Integer.toString(spawner.getBoost()), firstData.getIdentifyingName(), TimeComponent.makeReadable(spawner.getBoostEnd().toEpochMilli() - System.currentTimeMillis())).split("\\|");
             lore.add("");
             for (String line : parts)
                 lore.add(TextComponent.formatText(line));
         }
+
         itemmeta.setLore(lore);
         item.setItemMeta(itemmeta);
 
         int xpCost = spawner.getUpgradeCost(CostType.EXPERIENCE);
-
         int ecoCost = spawner.getUpgradeCost(CostType.ECONOMY);
+        boolean maxed = (spawner.getSpawnerDataCount() == config.getInt("Main.Spawner Max Upgrade"));
 
-        boolean maxed = false;
-        if (spawner.getSpawnerDataCount() == EpicSpawnersPlugin.getInstance().getConfig().getInt("Main.Spawner Max Upgrade"))
-            maxed = true;
-
-        ItemStack itemXP = new ItemStack(Material.valueOf(instance.getConfig().getString("Interfaces.XP Icon")), 1);
+        ItemStack itemXP = new ItemStack(Material.valueOf(config.getString("Interfaces.XP Icon")), 1);
         ItemMeta itemmetaXP = itemXP.getItemMeta();
-        itemmetaXP.setDisplayName(instance.getLocale().getMessage("interface.spawner.upgradewithxp"));
-        ArrayList<String> loreXP = new ArrayList<>();
-        if (!maxed)
-            loreXP.add(instance.getLocale().getMessage("interface.spawner.upgradewithxplore", Integer.toString(xpCost)));
-        else
-            loreXP.add(instance.getLocale().getMessage("event.upgrade.maxed"));
+        itemmetaXP.setDisplayName(locale.getMessage("interface.spawner.upgradewithxp"));
+        List<String> loreXP = new ArrayList<>();
+
+        if (!maxed) {
+            loreXP.add(locale.getMessage("interface.spawner.upgradewithxplore", xpCost));
+        } else {
+            loreXP.add(locale.getMessage("event.upgrade.maxed"));
+        }
+
         itemmetaXP.setLore(loreXP);
         itemXP.setItemMeta(itemmetaXP);
 
-        ItemStack itemECO = new ItemStack(Material.valueOf(instance.getConfig().getString("Interfaces.Economy Icon")), 1);
+        ItemStack itemECO = new ItemStack(Material.valueOf(config.getString("Interfaces.Economy Icon")), 1);
         ItemMeta itemmetaECO = itemECO.getItemMeta();
-        itemmetaECO.setDisplayName(instance.getLocale().getMessage("interface.spawner.upgradewitheconomy"));
-        ArrayList<String> loreECO = new ArrayList<>();
-        if (!maxed)
-            loreECO.add(instance.getLocale().getMessage("interface.spawner.upgradewitheconomylore", TextComponent.formatEconomy(ecoCost)));
-        else
-            loreECO.add(instance.getLocale().getMessage("event.upgrade.maxed"));
+        itemmetaECO.setDisplayName(locale.getMessage("interface.spawner.upgradewitheconomy"));
+        List<String> loreECO = new ArrayList<>();
+
+        if (!maxed) {
+            loreECO.add(locale.getMessage("interface.spawner.upgradewitheconomylore", TextComponent.formatEconomy(ecoCost)));
+        } else {
+            loreECO.add(locale.getMessage("event.upgrade.maxed"));
+        }
+
         itemmetaECO.setLore(loreECO);
         itemECO.setItemMeta(itemmetaECO);
 
-        int nu = 0;
-        while (nu != 27) {
-            inventory.setItem(nu, Methods.getGlass());
-            nu++;
-        }
+        for (int i = 0; i < 27; inventory.setItem(i++, GLASS));
+
         inventory.setItem(13, item);
+        inventory.setItem(0, BACKGROUND_GLASS_TYPE_2);
+        inventory.setItem(1, BACKGROUND_GLASS_TYPE_2);
+        inventory.setItem(2, BACKGROUND_GLASS_TYPE_3);
+        inventory.setItem(6, BACKGROUND_GLASS_TYPE_3);
+        inventory.setItem(7, BACKGROUND_GLASS_TYPE_2);
+        inventory.setItem(8, BACKGROUND_GLASS_TYPE_2);
+        inventory.setItem(9, BACKGROUND_GLASS_TYPE_2);
+        inventory.setItem(10, BACKGROUND_GLASS_TYPE_3);
+        inventory.setItem(16, BACKGROUND_GLASS_TYPE_3);
+        inventory.setItem(17, BACKGROUND_GLASS_TYPE_2);
+        inventory.setItem(18, BACKGROUND_GLASS_TYPE_2);
+        inventory.setItem(19, BACKGROUND_GLASS_TYPE_2);
+        inventory.setItem(20, BACKGROUND_GLASS_TYPE_3);
+        inventory.setItem(24, BACKGROUND_GLASS_TYPE_3);
+        inventory.setItem(25, BACKGROUND_GLASS_TYPE_2);
+        inventory.setItem(26, BACKGROUND_GLASS_TYPE_2);
 
-        inventory.setItem(0, Methods.getBackgroundGlass(true));
-        inventory.setItem(1, Methods.getBackgroundGlass(true));
-        inventory.setItem(2, Methods.getBackgroundGlass(false));
-        inventory.setItem(6, Methods.getBackgroundGlass(false));
-        inventory.setItem(7, Methods.getBackgroundGlass(true));
-        inventory.setItem(8, Methods.getBackgroundGlass(true));
-        inventory.setItem(9, Methods.getBackgroundGlass(true));
-        inventory.setItem(10, Methods.getBackgroundGlass(false));
-        inventory.setItem(16, Methods.getBackgroundGlass(false));
-        inventory.setItem(17, Methods.getBackgroundGlass(true));
-        inventory.setItem(18, Methods.getBackgroundGlass(true));
-        inventory.setItem(19, Methods.getBackgroundGlass(true));
-        inventory.setItem(20, Methods.getBackgroundGlass(false));
-        inventory.setItem(24, Methods.getBackgroundGlass(false));
-        inventory.setItem(25, Methods.getBackgroundGlass(true));
-        inventory.setItem(26, Methods.getBackgroundGlass(true));
+        if (config.getBoolean("Main.Display Help Button In Spawner Overview")) {
+            this.addInfo(inventory);
+        }
 
-        if (EpicSpawnersPlugin.getInstance().getConfig().getBoolean("Main.Display Help Button In Spawner Overview"))
-            addInfo(inventory);
-
-        if (spawner.getSpawnerStacks().size() == 1) {
-            if (spawner.getFirstStack().getSpawnerData().isUpgradeable()) {
-                if (EpicSpawnersPlugin.getInstance().getConfig().getBoolean("Main.Upgrade With XP"))
-                    inventory.setItem(11, itemXP);
-                if (EpicSpawnersPlugin.getInstance().getConfig().getBoolean("Main.Upgrade With Economy"))
-                    inventory.setItem(15, itemECO);
+        if (spawnerStacks.size() == 1 && firstData.isUpgradeable()) {
+            if (config.getBoolean("Main.Upgrade With XP")) {
+                inventory.setItem(11, itemXP);
+            }
+            if (config.getBoolean("Main.Upgrade With Economy")) {
+                inventory.setItem(15, itemECO);
             }
         }
     }
@@ -186,45 +197,41 @@ public class GUISpawnerOverview extends AbstractGUI {
     @Override
     protected void initClickableObjects() {
         this.registerClickableObject(8, (player, inventory, cursor, slot, type) -> {
-            infoPage++;
+            this.infoPage++;
             addInfo(inventory);
         });
 
         this.registerClickableObject(13, (player, inventory, cursor, slot, type) -> {
-            if (type.isRightClick()) {
-                if (spawner.getBoost() == 0) {
-                    spawner.playerBoost(player);
-                }
-            } else if (type.isLeftClick()) {
-                if (spawner.getSpawnerStacks().size() == 1) {
-                    spawner.convertOverview(player, 1);
-                }
+            if (type.isRightClick() && spawner.getBoost() == 0) {
+                this.spawner.playerBoost(player);
+            } else if (type.isLeftClick() && spawner.getSpawnerStacks().size() == 1) {
+                this.spawner.convertOverview(player, 1);
             }
         });
 
         this.registerClickableObject(11, (player, inventory, cursor, slot, type) -> {
-            if (instance.getConfig().getBoolean("Main.Upgrade With XP")
+            if (config.getBoolean("Main.Upgrade With XP")
                     && !inventory.getItem(slot).getItemMeta().getDisplayName().equals(ChatColor.COLOR_CHAR + "l")) {
-                spawner.upgrade(player, CostType.EXPERIENCE);
+                this.spawner.upgrade(player, CostType.EXPERIENCE);
             }
-            spawner.overview(player, 0);
+            this.spawner.overview(player, 0);
         });
 
         this.registerClickableObject(15, (player, inventory, cursor, slot, type) -> {
-            if (instance.getConfig().getBoolean("Main.Upgrade With Economy")
+            if (config.getBoolean("Main.Upgrade With Economy")
                     && !inventory.getItem(slot).getItemMeta().getDisplayName().equals(ChatColor.COLOR_CHAR + "l")) {
-                spawner.upgrade(player, CostType.ECONOMY);
+                this.spawner.upgrade(player, CostType.ECONOMY);
             }
-            spawner.overview(player, 0);
+            this.spawner.overview(player, 0);
         });
     }
 
     private void addInfo(Inventory inventory) {
         ItemStack itemO = new ItemStack(Material.PAPER, 1);
         ItemMeta itemmetaO = itemO.getItemMeta();
-        itemmetaO.setDisplayName(instance.getLocale().getMessage("interface.spawner.howtotitle"));
-        ArrayList<String> loreO = new ArrayList<>();
-        String text = EpicSpawnersPlugin.getInstance().getLocale().getMessage("interface.spawner.howtoinfo");
+        itemmetaO.setDisplayName(locale.getMessage("interface.spawner.howtotitle"));
+        List<String> loreO = new ArrayList<>();
+        String text = locale.getMessage("interface.spawner.howtoinfo");
 
         int start = (14 * infoPage) - 14;
         int li = 1; // 12
@@ -234,39 +241,38 @@ public class GUISpawnerOverview extends AbstractGUI {
         String[] parts = text.split("\\|");
         for (String line : parts) {
             line = compileHow(player, line);
-            if (line.equals(".") || line.equals("")) {
+            if (line.equals(".") || line.isEmpty()) continue;
 
-            } else {
-                Pattern regex = Pattern.compile("(.{1,28}(?:\\s|$))|(.{0,28})", Pattern.DOTALL);
-                Matcher m = regex.matcher(line);
-                while (m.find()) {
-                    if (li > start) {
-                        if (li < start + 15) {
-                            loreO.add(TextComponent.formatText("&7" + m.group()));
-                            added++;
-                        } else {
-                            max = true;
-                        }
+            Matcher m = REGEX.matcher(line);
+            while (m.find()) {
+                if (li > start) {
+                    if (li < start + 15) {
+                        loreO.add(TextComponent.formatText("&7" + m.group()));
+                        added++;
+                    } else {
+                        max = true;
                     }
-                    li++;
                 }
+                li++;
             }
         }
+
         if (added == 0) {
-            infoPage = 1;
-            addInfo(inventory);
+            this.infoPage = 1;
+            this.addInfo(inventory);
             return;
         }
+
         if (max) {
-            loreO.add(instance.getLocale().getMessage("interface.spawner.howtonext"));
+            loreO.add(locale.getMessage("interface.spawner.howtonext"));
         } else {
-            loreO.add(instance.getLocale().getMessage("interface.spawner.howtoback"));
+            loreO.add(locale.getMessage("interface.spawner.howtoback"));
         }
+
         itemmetaO.setLore(loreO);
         itemO.setItemMeta(itemmetaO);
         inventory.setItem(8, itemO);
     }
-
 
     private String compileHow(Player p, String text) {
         try {
@@ -291,14 +297,14 @@ public class GUISpawnerOverview extends AbstractGUI {
                                         a++;
                                     }
                                 } else if (nu == 2) {
-                                    if (!EpicSpawnersPlugin.getInstance().getConfig().getBoolean("Main.Upgrade With XP")) {
+                                    if (!config.getBoolean("Main.Upgrade With XP")) {
                                         text = text.replace(mi.group(), "");
                                     } else {
                                         text = text.replace(mi.group(), a(a, mi.group()));
                                         a++;
                                     }
                                 } else if (nu == 3) {
-                                    if (!EpicSpawnersPlugin.getInstance().getConfig().getBoolean("Main.Upgrade With Economy")) {
+                                    if (!config.getBoolean("Main.Upgrade With Economy")) {
                                         text = text.replace(mi.group(), "");
                                     } else {
                                         text = text.replace(mi.group(), a(a, mi.group()));
@@ -308,7 +314,7 @@ public class GUISpawnerOverview extends AbstractGUI {
                                 break;
                             case "WATER":
                                 if (nu == 1) {
-                                    if (!EpicSpawnersPlugin.getInstance().getConfig().getBoolean("settings.Spawners-repel-liquid")) {
+                                    if (!config.getBoolean("settings.Spawners-repel-liquid")) {
                                         text = text.replace(mi.group(), "");
                                     } else {
                                         text = text.replace(mi.group(), a(a, mi.group()));
@@ -317,7 +323,7 @@ public class GUISpawnerOverview extends AbstractGUI {
                                 break;
                             case "INVSTACK":
                                 if (nu == 1) {
-                                    if (!EpicSpawnersPlugin.getInstance().getConfig().getBoolean("Main.Allow Stacking Spawners In Survival Inventories")) {
+                                    if (!config.getBoolean("Main.Allow Stacking Spawners In Survival Inventories")) {
                                         text = text.replace(mi.group(), "");
                                     } else {
                                         text = text.replace(mi.group(), a(a, mi.group()));
@@ -326,7 +332,7 @@ public class GUISpawnerOverview extends AbstractGUI {
                                 break;
                             case "REDSTONE":
                                 if (nu == 1) {
-                                    if (!EpicSpawnersPlugin.getInstance().getConfig().getBoolean("Main.Redstone Power Deactivates Spawners")) {
+                                    if (!config.getBoolean("Main.Redstone Power Deactivates Spawners")) {
                                         text = text.replace(mi.group(), "");
                                     } else {
                                         text = text.replace(mi.group(), a(a, mi.group()));
@@ -335,7 +341,7 @@ public class GUISpawnerOverview extends AbstractGUI {
                                 break;
                             case "OMNI":
                                 if (nu == 1) {
-                                    if (!EpicSpawnersPlugin.getInstance().getConfig().getBoolean("Main.OmniSpawners Enabled")) {
+                                    if (!config.getBoolean("Main.OmniSpawners Enabled")) {
                                         text = text.replace(mi.group(), "");
                                     } else {
                                         text = text.replace(mi.group(), a(a, mi.group()));
@@ -343,17 +349,17 @@ public class GUISpawnerOverview extends AbstractGUI {
                                 }
                                 break;
                             case "DROP":
-                                if (!EpicSpawnersPlugin.getInstance().getConfig().getBoolean("Spawner Drops.Allow Killing Mobs To Drop Spawners") || !p.hasPermission("epicspawners.Killcounter")) {
+                                if (!config.getBoolean("Spawner Drops.Allow Killing Mobs To Drop Spawners") || !p.hasPermission("epicspawners.Killcounter")) {
                                     text = "";
                                 } else {
                                     text = text.replace("<TYPE>", spawner.getIdentifyingName().toLowerCase());
-                                    if (EpicSpawnersPlugin.getInstance().spawnerFile.getConfig().getInt("Entities." + Methods.getTypeFromString(spawner.getIdentifyingName()) + ".CustomGoal") != 0)
-                                        text = text.replace("<AMT>", Integer.toString(EpicSpawnersPlugin.getInstance().spawnerFile.getConfig().getInt("Entities." + Methods.getTypeFromString(spawner.getIdentifyingName()) + ".CustomGoal")));
+                                    if (plugin.spawnerFile.getConfig().getInt("Entities." + Methods.getTypeFromString(spawner.getIdentifyingName()) + ".CustomGoal") != 0)
+                                        text = text.replace("<AMT>", Integer.toString(plugin.spawnerFile.getConfig().getInt("Entities." + Methods.getTypeFromString(spawner.getIdentifyingName()) + ".CustomGoal")));
                                     else
-                                        text = text.replace("<AMT>", Integer.toString(EpicSpawnersPlugin.getInstance().getConfig().getInt("Spawner Drops.Kills Needed for Drop")));
+                                        text = text.replace("<AMT>", Integer.toString(config.getInt("Spawner Drops.Kills Needed for Drop")));
                                 }
                                 if (nu == 1) {
-                                    if (EpicSpawnersPlugin.getInstance().getConfig().getBoolean("Spawner Drops.Count Unnatural Kills Towards Spawner Drop")) {
+                                    if (config.getBoolean("Spawner Drops.Count Unnatural Kills Towards Spawner Drop")) {
                                         text = text.replace(mi.group(), "");
                                     } else {
                                         text = text.replace(mi.group(), a(a, mi.group()));
@@ -366,7 +372,7 @@ public class GUISpawnerOverview extends AbstractGUI {
                 }
 
             }
-            text = text.replace("[", "").replace("]", "").replace("{", "").replace("}", "");
+            text = text.replaceAll("[\\[\\]\\{\\}]", ""); // [, ], { or }
             return text;
         } catch (Exception e) {
             Debugger.runReport(e);
